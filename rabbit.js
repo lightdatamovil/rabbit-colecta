@@ -1,100 +1,64 @@
-const amqp = require('amqplib');
-const { colecta } = require('./controller/asignacionesController');
+import { connect } from 'amqplib';
+import dotenv from 'dotenv';
+import { colectar } from './controller/asignacionesController.js';
+import { verifyParamaters } from './src/funciones/verifyParameters.js';
+import { redisClient } from './db.js';
 
-const RABBITMQ_URL = 'amqp://lightdata:QQyfVBKRbw6fBb@158.69.131.226:5672'; // Cambia según tu configuración
-const COLLECTA_QUEUE = 'colecta';
+dotenv.config({ path: process.env.ENV_FILE || '.env' });
 
-
+const RABBITMQ_URL = process.env.RABBITMQ_URL;
+const QUEUE_NAME_COLECTA = process.env.QUEUE_NAME_COLECTA;;
 
 async function startConsumer() {
     try {
-        const connection = await amqp.connect(RABBITMQ_URL);
+        await redisClient.connect();
+
+        const connection = await connect(RABBITMQ_URL);
+
         const channel = await connection.createChannel();
 
-        await channel.assertQueue(COLLECTA_QUEUE, { durable: true });
-        console.log(`✅ Esperando mensajes en la cola: ${COLLECTA_QUEUE}`);
+        await channel.assertQueue(QUEUE_NAME_COLECTA, { durable: true });
 
-        channel.consume(COLLECTA_QUEUE, async (msg) => {
+        console.log(`[*] Esperando mensajes en la cola "${QUEUE_NAME_COLECTA}"`);
+
+        channel.consume(QUEUE_NAME_COLECTA, async (msg) => {
             if (msg !== null) {
-                const messageContent = JSON.parse(msg.content.toString());
+                const body = JSON.parse(msg.content.toString());
                 try {
-                    const dataQR = messageContent.dataQr || messageContent.data || {}; // Asegurar que `dataQR` siempre tenga un valor
-                    const responseChannel = messageContent.channel; // Usar directamente `channel`
+                    console.log("[x] Mensaje recibido:", body);
 
-                    console.log('📩 Mensaje recibido:', messageContent);
+                    const errorMessage = verifyParamaters(body, ['dataQr', 'autoAssign', 'channel']);
 
-                    if (!responseChannel) {
-                        console.error('⚠️ No se especificó un canal de respuesta en el mensaje');
-                        channel.ack(msg);
-                        return;
+                    if (errorMessage) {
+                        console.log("[x] Error al verificar los parámetros:", errorMessage);
+                        return { mensaje: errorMessage };
                     }
 
-                    const resultado = await colecta(dataQR, messageContent);
-                    
-                    // Asegurarse de que `resultado` no sea `undefined`
-                    if (!resultado) {
-                        throw new Error("El resultado de la función 'colecta' es undefined");
-                    }
+                    const result = await colectar(body.dataQr, body);
 
-                    resultado.feature = "colecta"; // Ahora podemos agregar la propiedad `feature`
+                    result.feature = "colecta";
 
-                    const sent = channel.sendToQueue(responseChannel, Buffer.from(JSON.stringify(resultado)), { persistent: true });
-                    if (sent) {
-                        console.log(`✅ Respuesta enviada a ${responseChannel}, respuesta: ${JSON.stringify(resultado)}`);
-                    } else {
-                        console.error(`⚠️ No se pudo enviar la respuesta a ${responseChannel}`);
-                    }
+                    channel.sendToQueue(responseChannel, Buffer.from(JSON.stringify(result)), { persistent: true });
                 } catch (error) {
                     console.error("[x] Error al procesar el mensaje:", error);
-                    const errorResponse = {
-                        feature: messageContent.feature || "unknown",
-                        success: false,
-                        message: error.message,
-                    };
 
-                    channel.sendToQueue(
-                        messageContent.channel,
-                        Buffer.from(JSON.stringify(errorResponse)),
+                    let a = channel.sendToQueue(
+                        body.channel,
+                        Buffer.from(JSON.stringify({ feature: body.feature, success: false, message: error.message })),
                         { persistent: true }
                     );
-                    console.log("Mensaje enviado al canal", messageContent.channel + ":", errorResponse);
+
+                    if (a) {
+                        console.log("Mensaje enviado al canal", body.channel + ":", { feature: body.feature, success: false, message: error.message });
+                    }
+                } finally {
+                    channel.ack(msg);
                 }
-                channel.ack(msg);
             }
-        }, { noAck: false });
+        });
     } catch (error) {
         console.error('❌ Error al conectar con RabbitMQ:', error);
     }
 }
 
-async function sendMessage(queue, message) {
-    try {
-        const connection = await amqp.connect(RABBITMQ_URL);
-        const channel = await connection.createChannel();
-
-        await channel.assertQueue(queue, { durable: true });
-        channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { persistent: true });
-
-        console.log(`📤 Mensaje enviado a la cola ${queue}:`, message);
-        await channel.close();
-        await connection.close();
-    } catch (error) {
-        console.error('❌ Error al enviar el mensaje:', error);
-    }
-}
-
 startConsumer();
-
-// Ejemplo de uso
-const sampleMessage = {
-    companyId: 275,
-    userId: 2,
-    profile: 3,
-    autoAssign: false,
-    dataQr: {"id":"44429054087","sender_id":413658225,"hash_code":"ZpFyEQnGa+juvrAxbe83sWRg1S+8qZPyOgXGI1ZiqjY=","security_digit":"0"}
-    ,
-    channel: "respuesta_colecta"
-};
-
-
-sendMessage(COLLECTA_QUEUE, sampleMessage);
