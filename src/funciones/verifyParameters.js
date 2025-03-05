@@ -1,14 +1,13 @@
-
-export function verifyParamaters(body, parametrosRequeridos, userData = false) {
-    const param = ['deviceId', 'appVersion', 'brand', 'model', 'androidVersion', ...parametrosRequeridos];
+export function verifyParameters(body, requiredParams, userData = false) {
+    const params = ['deviceId', 'appVersion', 'brand', 'model', 'androidVersion', ...requiredParams];
     if (userData) {
-        param.push('companyId', 'userId', 'profile');
+        params.push('companyId', 'userId', 'profile');
     }
 
-    const faltantes = param.filter(p => !body[p]);
+    const missingParams = params.filter(p => !body.hasOwnProperty(p));
 
-    if (faltantes.length > 0) {
-        return `Faltan los siguientes parámetros: ${faltantes.join(', ')}`;
+    if (missingParams.length > 0) {
+        return `Faltan los siguientes parámetros: ${missingParams.join(', ')}`;
     }
 
     return null;

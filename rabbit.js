@@ -1,8 +1,8 @@
 import { connect } from 'amqplib';
 import dotenv from 'dotenv';
 import { colectar } from './controller/asignacionesController.js';
-import { verifyParamaters } from './src/funciones/verifyParameters.js';
-import { redisClient } from './db.js';
+import { verifyParameters } from './src/funciones/verifyParameters.js';
+import { getCompanyById, redisClient } from './db.js';
 
 dotenv.config({ path: process.env.ENV_FILE || '.env' });
 
@@ -27,18 +27,24 @@ async function startConsumer() {
                 try {
                     console.log("[x] Mensaje recibido:", body);
 
-                    const errorMessage = verifyParamaters(body, ['dataQr', 'autoAssign', 'channel']);
+                    const errorMessage = verifyParameters(body, ['dataQr', 'autoAssign', 'channel']);
 
                     if (errorMessage) {
                         console.log("[x] Error al verificar los parámetros:", errorMessage);
                         return { mensaje: errorMessage };
                     }
-
-                    const result = await colectar(body.dataQr, body);
+                    const company = await getCompanyById(body.companyId)
+                    const result = await colectar(company, body.dataQr, body.userId, body.profile, body.autoAssign);
 
                     result.feature = "colecta";
 
-                    channel.sendToQueue(responseChannel, Buffer.from(JSON.stringify(result)), { persistent: true });
+                    channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), { persistent: true });
+                    console.log(
+                        "[x] Mensaje enviado al canal",
+                        body.channel + ":",
+                        result
+                    );
+
                 } catch (error) {
                     console.error("[x] Error al procesar el mensaje:", error);
 
