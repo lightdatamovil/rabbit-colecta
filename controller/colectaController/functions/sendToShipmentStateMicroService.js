@@ -6,7 +6,7 @@ dotenv.config({ path: process.env.ENV_FILE || '.env' });
 const RABBITMQ_URL = process.env.RABBITMQ_URL;
 const QUEUE_ESTADOS = process.env.QUEUE_ESTADOS;
 
-export async function sendToShipmentStateMicroService(companyId, userId, shipmentId, shipmentState, shipmentSubState, shipmentMLState) {
+export async function sendToShipmentStateMicroService(companyId, userId, shipmentId) {
     try {
         const connection = await connect(RABBITMQ_URL);
         const channel = await connection.createChannel();
@@ -15,9 +15,9 @@ export async function sendToShipmentStateMicroService(companyId, userId, shipmen
         const message = {
             companyId,
             shipmentId,
-            shipmentState,
-            subestado: shipmentSubState || null,
-            estadoML: shipmentMLState || null,
+            estado: 0,
+            subestado: null,
+            estadoML: null,
             fecha: new Date().toISOString(),
             userId
         };

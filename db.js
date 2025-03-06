@@ -1,5 +1,6 @@
 import redis from 'redis';
 import dotenv from 'dotenv';
+import mysql from 'mysql';
 
 dotenv.config({ path: process.env.ENV_FILE || ".env" });
 
@@ -40,6 +41,52 @@ export async function updateRedis(empresaId, envioId, choferId) {
 }
 
 let companiesList = [];
+let clientList = [];
+let accountList = {};
+
+export async function loadAccountList(dbConnection, senderId) {
+    try {
+        const querySelectClientesCuentas = `
+                SELECT did, didCliente, ML_id_vendedor 
+                FROM clientes_cuentas 
+                WHERE superado = 0 AND elim = 0 AND tipoCuenta = 1
+            `;
+
+        const result = await executeQuery(dbConnection, querySelectClientesCuentas);
+
+        result.forEach(row => {
+            accountList[row.ML_id_vendedor] = {
+                didCliente: row.didCliente,
+                didCuenta: row.did,
+            };
+        });
+
+        return accountList[senderId];
+    } catch (error) {
+        console.error("Error en obtenerMisCuentas:", error);
+        throw error;
+    }
+}
+
+export async function getAccountBySenderId(dbConnection, senderId) {
+    try {
+        if (accountList === undefined || accountList === null || Object.keys(accountList).length === 0) {
+            await loadAccountList(dbConnection, senderId);
+        }
+
+        if (accountList[senderId] === undefined || accountList[senderId] === null) {
+            throw new Error("No se encontró la cuenta del vendedor");
+        }
+
+        const account = accountList[senderId];
+
+        return account;
+    } catch (error) {
+        console.error("Error en getAccountBySenderId:", error);
+        throw error;
+    }
+}
+
 
 export function getProdDbConfig(company) {
     return {
@@ -60,7 +107,7 @@ async function loadCompaniesFromRedis() {
     }
 }
 
-export async function getCompanyById(companyCode) {
+export async function getCompanyById(companyId) {
     if (!Array.isArray(companiesList) || companiesList.length === 0) {
         try {
             await loadCompaniesFromRedis();
@@ -70,7 +117,64 @@ export async function getCompanyById(companyCode) {
         }
     }
 
-    return companiesList.find(company => Number(company.did) === Number(companyCode)) || null;
+    return companiesList.find(company => Number(company.did) === Number(companyId)) || null;
+}
+
+export async function getClientsByCompany(company) {
+    try {
+        const companyClients = clientList.find(client => client.companyId == company.did);
+
+        if (companyClients === undefined || companyClients === null || companyClients.length == 0) {
+            const clients = await getClients(company);
+            const companyClientsR = clients.find(client => client.companyId == company.did).clients || [];
+
+            return companyClientsR;
+        } else {
+            return companyClients.clients || [];
+        }
+    } catch (error) {
+        console.error("Error en getClientsByCompany:", error);
+        throw error;
+    }
+}
+
+export async function getClients(company) {
+    const dbConfig = getProdDbConfig(company);
+    const dbConnection = mysql.createConnection(dbConfig);
+    dbConnection.connect();
+
+    try {
+        const queryUsers = "SELECT * FROM clientes";
+
+        const resultQueryUsers = await executeQuery(dbConnection, queryUsers, []);
+
+        const clients = [];
+
+        for (let i = 0; i < resultQueryUsers.length; i++) {
+            const row = resultQueryUsers[i];
+
+            const client = {
+                id: row.id,
+                id_origen: row.id_origen,
+                fecha_sincronizacion: row.fecha_sincronizacion,
+                did: row.did,
+                codigo: row.codigo,
+                nombre: row.nombre_fantasia,
+                codigos: row.codigos,
+                dataGeo: row.dataGeo,
+            };
+
+            clients.push(client);
+        }
+        clientList.push({ companyId: company.did, clients: clients });
+
+        return clientList;
+    } catch (error) {
+        console.error("Error en getClients:", error);
+        throw error;
+    } finally {
+        dbConnection.end();
+    }
 }
 
 export async function getCompanyByCode(companyCode) {

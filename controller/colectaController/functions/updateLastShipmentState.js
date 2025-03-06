@@ -1,6 +1,6 @@
 import { executeQuery } from "../../../db.js";
 
-export async function fsetestadoConector(dbConnection, did) {
+export async function updateLastShipmentState(dbConnection, did) {
     try {
         const fecha = new Date().toISOString().slice(0, 19).replace('T', ' ');
         const estado = 0;
@@ -25,6 +25,7 @@ export async function fsetestadoConector(dbConnection, did) {
             SET superado = 1 
             WHERE superado = 0 AND didEnvio = ?
         `;
+
         await executeQuery(dbConnection, sqlSuperado, [did]);
 
         const sqlActualizarEnvios = `
@@ -32,6 +33,7 @@ export async function fsetestadoConector(dbConnection, did) {
             SET estado_envio = ? 
             WHERE superado = 0 AND did = ?
         `;
+
         await executeQuery(dbConnection, sqlActualizarEnvios, [estado, did]);
 
         const sqlDidCadete = `

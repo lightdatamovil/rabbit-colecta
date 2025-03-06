@@ -1,8 +1,9 @@
-import { executeQuery, getProdDbConfig, getCompanyByCode } from "../../../db.js";
-import { asignar } from "../functions/asignar.js";
+import { executeQuery, getProdDbConfig, getCompanyByCode } from "../../../../db.js";
+import { asignar } from "../../functions/asignar.js";
 import mysql from 'mysql';
+import { insertarPaquete } from "../../functions/insertarPaquete.js";
 
-export async function handleFlexLogic(dbConnection, companyId, userId, profile, dataQr, myAccounts, autoAssign) {
+export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, myAccounts, autoAssign) {
     const senderid = dataQr.sender_id;
     const idshipment = dataQr.id;
     let didcliente = -1;
@@ -59,13 +60,13 @@ export async function handleFlexLogic(dbConnection, companyId, userId, profile, 
         for (const clienteexterno of rowsExternas) {
             const codigovinculacion = clienteexterno.codigoVinculacionLogE;
 
-            const company = await getCompanyByCode(codigovinculacion);
+            const externalCompany = await getCompanyByCode(codigovinculacion);
 
-            const dbConfigExt = getProdDbConfig(company.did);
+            const dbConfigExt = getProdDbConfig(externalCompany);
             const dbConnectionExt = mysql.createConnection(dbConfigExt);
             dbConnectionExt.connect();
 
-            const didclienteLocal_ext = clienteexterno.did;
+            const didclienteInterno_ext = clienteexterno.did;
 
             const idempresaExterna = dataEmpresaExterna.id;
             const nombre_fantasia = clienteexterno.nombre_fantasia;
@@ -94,12 +95,12 @@ export async function handleFlexLogic(dbConnection, companyId, userId, profile, 
                 if (rowsEnvios.length > 0) {
                     externalShipmentId = rowsEnvios[0].did;
                 } else {
-                    externalShipmentId = await insertarPaquete(didcliente_ext, didcuenta_ext, dataQr, dbConnectionExt, 1, 0, idempresaExterna);
+                    externalShipmentId = await insertarPaquete(dbConnectionExt, idempresaExterna, didcliente_ext, didcuenta_ext, dataQr, 1, 0);
                 }
 
                 if (externalShipmentId !== -1) {
-                    const didpaquete_local = await insertarPaquete(didclienteLocal_ext, 0, dataQr, dbConnection, 1, 1, companyId);
-                    await insertEnviosExteriores(externalShipmentId, didpaquete_local, dbConnection, 1, nombre_fantasia, idempresaExterna);
+                    const didpaquete_interno = await insertarPaquete(dbConnection, companyId, didclienteInterno_ext, 0, dataQr, 1, 1,);
+                    await insertEnviosExteriores(externalShipmentId, didpaquete_interno, dbConnection, 1, nombre_fantasia, idempresaExterna);
 
                     const sqlChofer = `
                             SELECT usuario 
@@ -145,29 +146,18 @@ export async function handleFlexLogic(dbConnection, companyId, userId, profile, 
                             }
                         }
 
-                        fsetestadoConector(didpaquete_local, 0, dbConnectionExt);
+                        fsetestadoConector(didpaquete_interno, 0, dbConnectionExt);
 
                         if (autoAssign) {
-                            const payload = {
-                                companyId: companyId,
-                                userId: userId,
-                                profile: profile,
-                                appVersion: "null",
-                                brand: "null",
-                                model: "null",
-                                androidVersion: "null",
-                                deviceId: "null",
-                                dataQr: {
-                                    id: '44429054087',
-                                    sender_id: 413658225,
-                                    hash_code: 'ZpFyEQnGa+juvrAxbe83sWRg1S+8qZPyOgXGI1ZiqjY=',
-                                    security_digit: '0'
+                            const dqr = {
+                                id: '44429054087',
+                                sender_id: 413658225,
+                                hash_code: 'ZpFyEQnGa+juvrAxbe83sWRg1S+8qZPyOgXGI1ZiqjY=',
+                                security_digit: '0'
 
-                                },
-                                driverId: userId,
-                                deviceFrom: "Autoasignado de colecta"
                             };
-                            await asignar(payload)
+
+                            await asignar(companyId, userId, profile, dqr, userId, "jaja");
                         }
 
                         await fsetestadoConector(dbConnectionExt, externalShipmentId);
@@ -182,21 +172,7 @@ export async function handleFlexLogic(dbConnection, companyId, userId, profile, 
             return { estadoRespuesta: false, mensaje: "El paquete ya se encuentra colectado - FLEX" };
         } else {
             if (autoAssign) {
-                const payload = {
-                    companyId: companyId,
-                    userId: userId,
-                    profile: profile,
-                    appVersion: "null",
-                    brand: "null",
-                    model: "null",
-                    androidVersion: "null",
-                    deviceId: "null",
-                    dataQr: dataQr,
-                    driverId: userId,
-                    deviceFrom: "Autoasignado de colecta"
-                };
-
-                await asignar(payload)
+                await asignar(companyId, userId, profile, dataQr, userId, "jaja");
             }
 
             await fsetestadoConector(dbConnection, didpaquete);
@@ -205,7 +181,7 @@ export async function handleFlexLogic(dbConnection, companyId, userId, profile, 
 
         }
     } else {
-        const didpaquete_local = await insertarPaquete(didcliente, 0, dataQr, dbConnection, 1, 0, companyId);
+        const didpaquete_interno = await insertarPaquete(dbConnection, companyId, didcliente, 0, dataQr, 1, 0,);
 
         const queryUpdateEnvios = `
                 UPDATE envios 
@@ -214,31 +190,14 @@ export async function handleFlexLogic(dbConnection, companyId, userId, profile, 
                 LIMIT 1
             `;
 
-        await executeQuery(dbConnection, queryUpdateEnvios, [dataQr, didpaquete_local]);
+        await executeQuery(dbConnection, queryUpdateEnvios, [dataQr, didpaquete_interno]);
 
 
         await fsetestadoConector(dbConnection, didpaquete);
         if (autoAssign) {
-            const payload = {
-                companyId: companyId,
-                userId: userId,
-                profile: profile,
-                appVersion: "null",
-                brand: "null",
-                model: "null",
-                androidVersion: "null",
-                deviceId: "null",
-                dataQr: dataQr,
-                driverId: userId,
-                deviceFrom: "Autoasignado de colecta"
-            };
-
-            await asignar(payload)
+            await asignar(companyId, userId, profile, dataQr, userId, "kaka");
         }
 
         return { estadoRespuesta: true, mensaje: "Paquete insertado y colectado - FLEX" };
-
-
     }
-
 }

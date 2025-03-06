@@ -1,4 +1,5 @@
 import { executeQuery } from '../../../db.js';
+import axios from "axios";
 
 export async function insertarPaquete(dbConnection, companyId, clientId, accountId, dataQr, flex, externo) {
     const lote = Math.random().toString(36).substring(2, 15);
@@ -16,16 +17,16 @@ export async function insertarPaquete(dbConnection, companyId, clientId, account
         const result = await executeQuery(
             dbConnection,
             queryInsertEnvios,
-            [0, idshipment, senderid, clientId, 1, lote, accountId, dataQr, fecha_inicio, flex, externo, fechaunix],
+            [0, idshipment, senderid, clientId, 1, lote, accountId, JSON.stringify(dataQr), fecha_inicio, flex, externo, fechaunix],
         );
 
         if (result.insertId) {
-            await post(
+            await axios.post(
                 'https://altaenvios.lightdata.com.ar/api/enviosMLredis',
                 {
                     idEmpresa: companyId,
                     estado: 0,
-                    did: idnuevo,
+                    did: result.insertId,
                     ml_shipment_id: idshipment,
                     ml_vendedor_id: senderid
                 },
@@ -42,10 +43,11 @@ export async function insertarPaquete(dbConnection, companyId, clientId, account
                 WHERE superado = 0 AND elim = 0 AND id = ? 
                 LIMIT 1
             `;
-            await executeQuery(dbConnection, updateSql, [idnuevo, idnuevo]);
+
+            await executeQuery(dbConnection, updateSql, [result.insertId, result.insertId]);
         }
 
-        return idnuevo;
+        return result.insertId;
     } catch (error) {
         console.error('❌ Error en insertarPaquete:', error);
         throw error;

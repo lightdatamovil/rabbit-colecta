@@ -1,16 +1,22 @@
 import { executeQuery } from "../../../db.js";
 
-export async function insertEnviosExteriores(dbConnection, localShipmentId, externalShipmentId, flex, externalName, externalCompanyId) {
-    const queryInsertEnviosExteriores = `
-        INSERT INTO envios_exteriores (didLocal, didExterno, flex, cliente, didEmpresa)
-        VALUES (?, ?, ?, ?, ?)
-    `;
-
+export async function insertEnviosExteriores(dbConnection, internoShipmentId, externalShipmentId, flex, externalName, externalCompanyId) {
     try {
+        const queryInsertEnviosExteriores = `
+            INSERT INTO envios_exteriores (didInterno, didExterno, flex, cliente, didEmpresa)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
         const result = await executeQuery(
             dbConnection,
             queryInsertEnviosExteriores,
-            [localShipmentId, externalShipmentId, flex, externalName, externalCompanyId],
+            [
+                internoShipmentId,
+                externalShipmentId,
+                flex,
+                externalName,
+                externalCompanyId,
+            ],
         );
 
         return result.insertId;
