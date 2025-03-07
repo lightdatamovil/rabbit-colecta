@@ -3,37 +3,13 @@ import { asignar } from "../../functions/asignar.js";
 import mysql from 'mysql';
 import { insertarPaquete } from "../../functions/insertarPaquete.js";
 
-export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, myAccounts, autoAssign) {
+export async function handleExternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign) {
     const senderid = dataQr.sender_id;
     const idshipment = dataQr.id;
     let didcliente = -1;
     let didpaquete = -1;
     let estado_envio = -1;
     let paquetecargado = false;
-
-    if (myAccounts[companyId][senderid]) {
-        didcliente = myAccounts[senderid].didcliente;
-        didcuenta = myAccounts[companyId][senderid].didcuenta;
-    }
-
-    const sql = `
-        SELECT did, estado_envio, didCliente, didCuenta, ml_qr_seguridad 
-        FROM envios 
-        WHERE superado = 0 AND elim = 0 AND ml_shipment_id = ? AND ml_vendedor_id = ? 
-        LIMIT 1
-    `;
-
-    const result = await executeQuery(dbConnection, sql, [idshipment, senderid]);
-
-    const row = result[0];
-
-    if (row) {
-        didpaquete = row.did;
-        estado_envio = row.estado_envio * 1;
-        didcliente = row.didCliente;
-        didcuenta = row.didCuenta;
-        paquetecargado = false;
-    }
 
     if (didpaquete !== -1) {
         const sqlColectado = `
