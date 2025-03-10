@@ -32,7 +32,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         const didinterno = await insertarPaquete(
             dbConnection,
-            externalCompany.did,
+            companyId,
             client.did,
             0,
             { id: "", sender_id: "" },
@@ -60,6 +60,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         if (chofer.length > 0) {
 
+            // externo
             await asignar(dataQr.empresa, userId, profile, dataQr, chofer[0].usuario);
 
             if (autoAssign) {
@@ -69,7 +70,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                     cliente: dataQr.cliente,
                     empresa: dataQr.empresa,
                 };
-
+                // interno
                 await asignar(companyId, userId, profile, dqr, userId);
             }
         }
