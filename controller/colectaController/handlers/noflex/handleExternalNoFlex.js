@@ -5,7 +5,6 @@ import { updateLastShipmentState } from "../../functions/updateLastShipmentState
 import mysql from "mysql";
 import { insertarPaquete } from "../../functions/insertarPaquete.js";
 import { insertEnviosExteriores } from "../../functions/insertEnviosExteriores.js";
-import { informePro } from "../../functions/informePro.js";
 
 export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign) {
     try {
@@ -68,7 +67,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                     interno: dataQr.interno,
                     did: didinterno,
                     cliente: dataQr.cliente,
-                    empresa: companyId
+                    empresa: dataQr.empresa,
                 };
 
                 await asignar(companyId, userId, profile, dqr, userId);

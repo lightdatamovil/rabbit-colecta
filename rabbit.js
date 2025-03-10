@@ -33,7 +33,9 @@ async function startConsumer() {
                         console.log("[x] Error al verificar los parámetros:", errorMessage);
                         return { mensaje: errorMessage };
                     }
-                    const company = await getCompanyById(body.companyId)
+                    const company = await getCompanyById(body.companyId);
+                    console.log("companyque llega", company.did);
+
                     const result = await colectar(company, body.dataQr, body.userId, body.profile, body.autoAssign);
 
                     result.feature = "colecta";
