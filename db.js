@@ -40,53 +40,9 @@ export async function updateRedis(empresaId, envioId, choferId) {
     await redisClient.set('DWRTE', JSON.stringify(DWRTE));
 }
 
-let companiesList = [];
-let clientList = [];
+let companiesList = {};
+let clientList = {};
 let accountList = {};
-
-export async function loadAccountList(dbConnection, senderId) {
-    try {
-        const querySelectClientesCuentas = `
-                SELECT did, didCliente, ML_id_vendedor 
-                FROM clientes_cuentas 
-                WHERE superado = 0 AND elim = 0 AND tipoCuenta = 1
-            `;
-
-        const result = await executeQuery(dbConnection, querySelectClientesCuentas);
-
-        result.forEach(row => {
-            accountList[row.ML_id_vendedor] = {
-                didCliente: row.didCliente,
-                didCuenta: row.did,
-            };
-        });
-
-        return accountList[senderId];
-    } catch (error) {
-        console.error("Error en obtenerMisCuentas:", error);
-        throw error;
-    }
-}
-
-export async function getAccountBySenderId(dbConnection, senderId) {
-    try {
-        if (accountList === undefined || accountList === null || Object.keys(accountList).length === 0) {
-            await loadAccountList(dbConnection, senderId);
-        }
-
-        if (accountList[senderId] === undefined || accountList[senderId] === null) {
-            throw new Error("No se encontró la cuenta del vendedor");
-        }
-
-        const account = accountList[senderId];
-
-        return account;
-    } catch (error) {
-        console.error("Error en getAccountBySenderId:", error);
-        throw error;
-    }
-}
-
 
 export function getProdDbConfig(company) {
     return {
@@ -99,62 +55,141 @@ export function getProdDbConfig(company) {
 
 async function loadCompaniesFromRedis() {
     try {
-        const companysDataJson = await redisClient.get('empresasData');
-        companiesList = companysDataJson ? Object.values(JSON.parse(companysDataJson)) : [];
+        const companiesListString = await redisClient.get('empresasData');
+
+        companiesList = JSON.parse(companiesListString);
+
     } catch (error) {
-        console.error("Error al cargar las empresas desde Redis:", error);
+        console.error("Error en loadCompaniesFromRedis:", error);
         throw error;
     }
 }
 
 export async function getCompanyById(companyId) {
-    if (!Array.isArray(companiesList) || companiesList.length === 0) {
-        try {
-            await loadCompaniesFromRedis();
-        } catch (error) {
-            console.error("Error al cargar las empresas desde Redis2:", error);
-            throw error;
-        }
-    }
-
-    return companiesList.find(company => Number(company.did) === Number(companyId)) || null;
-}
-
-export async function getClientsByCompany(company) {
     try {
-        const companyClients = clientList.find(client => client.companyId == company.did);
+        let company = companiesList[companyId];
 
-        if (companyClients === undefined || companyClients === null || companyClients.length == 0) {
-            const clients = await getClients(company);
-            const companyClientsR = clients.find(client => client.companyId == company.did).clients || [];
+        if (company == undefined || Object.keys(companiesList).length === 0) {
+            try {
+                await loadCompaniesFromRedis();
 
-            return companyClientsR;
-        } else {
-            return companyClients.clients || [];
+                company = companiesList[companyId];
+            } catch (error) {
+                console.error("Error al cargar compañías desde Redis:", error);
+                throw error;
+            }
         }
+
+        return company;
     } catch (error) {
-        console.error("Error en getClientsByCompany:", error);
+        console.error("Error en getCompanyById:", error);
         throw error;
     }
 }
 
-export async function getClients(company) {
-    const dbConfig = getProdDbConfig(company);
+export async function getCompanyByCode(companyCode) {
+    try {
+        let company;
+
+        if (Object.keys(companiesList).length === 0) {
+            try {
+                await loadCompaniesFromRedis();
+            } catch (error) {
+                console.error("Error al cargar compañías desde Redis:", error);
+                throw error;
+            }
+        }
+
+        for (const key in companiesList) {
+            if (companiesList.hasOwnProperty(key)) {
+                const currentCompany = companiesList[key];
+                if (String(currentCompany.codigo) === String(companyCode)) {
+                    company = currentCompany;
+                    break;
+                }
+            }
+        }
+
+        return company;
+    } catch (error) {
+        console.error("Error en getCompanyByCode:", error);
+        throw error;
+    }
+}
+
+async function loadAccountList(dbConnection, companyId, senderId) {
+    try {
+        const querySelectClientesCuentas = `
+            SELECT did, didCliente, ML_id_vendedor 
+            FROM clientes_cuentas 
+            WHERE superado = 0 AND elim = 0 AND tipoCuenta = 1 AND ML_id_vendedor != ''
+        `;
+
+        const result = await executeQuery(dbConnection, querySelectClientesCuentas);
+
+        if (!accountList[companyId]) {
+            accountList[companyId] = {};
+        }
+
+        result.forEach(row => {
+            const keySender = row.ML_id_vendedor;
+
+            if (!accountList[companyId][keySender]) {
+                accountList[companyId][keySender] = {};
+            }
+
+            accountList[companyId][keySender] = {
+                didCliente: row.didCliente,
+                didCuenta: row.did,
+            };
+        });
+
+        return accountList[companyId] ? accountList[companyId][senderId] : null;
+    } catch (error) {
+        console.error("Error en obtenerMisCuentas:", error);
+        throw error;
+    }
+}
+
+export async function getAccountBySenderId(dbConnection, companyId, senderId) {
+    try {
+        if (accountList === undefined || accountList === null || Object.keys(accountList).length === 0) {
+            await loadAccountList(dbConnection, companyId, senderId);
+        }
+        console.log("accountList", accountList);
+        console.log("companyId", companyId);
+        console.log("senderId", senderId);
+
+
+        const account = accountList[companyId][senderId];
+
+        return account;
+    } catch (error) {
+        console.error("Error en getAccountBySenderId:", error);
+        throw error;
+    }
+}
+
+async function loadClients(companyId) {
+
+    // Verifica si la compañía especificada existe en la lista de compañías
+    if (!clientList[companyId]) {
+        clientList[companyId] = {}
+    }
+
+    // Obtiene la configuración de la base de datos de la compañía especificada
+    const dbConfig = getProdDbConfig(companyId);
     const dbConnection = mysql.createConnection(dbConfig);
     dbConnection.connect();
 
     try {
         const queryUsers = "SELECT * FROM clientes";
-
         const resultQueryUsers = await executeQuery(dbConnection, queryUsers, []);
-
-        const clients = [];
 
         for (let i = 0; i < resultQueryUsers.length; i++) {
             const row = resultQueryUsers[i];
 
-            const client = {
-                id: row.id,
+            clientList[companyId][row.id] = {
                 id_origen: row.id_origen,
                 fecha_sincronizacion: row.fecha_sincronizacion,
                 did: row.did,
@@ -163,34 +198,37 @@ export async function getClients(company) {
                 codigos: row.codigos,
                 dataGeo: row.dataGeo,
             };
-
-            clients.push(client);
         }
-        clientList.push({ companyId: company.did, clients: clients });
-
-        return clientList;
+        return clientList[companyId];
     } catch (error) {
-        console.error("Error en getClients:", error);
+        console.error(`Error en getClients para la compañía ${companyId}:`, error);
         throw error;
     } finally {
         dbConnection.end();
     }
 }
 
-export async function getCompanyByCode(companyCode) {
-    let company = companiesList.find(company => String(company.codigo) === String(companyCode)) || null;
 
-    if (!Array.isArray(companiesList) || companiesList.length == 0 || companiesList == null) {
-        try {
-            await loadCompaniesFromRedis();
-            company = companiesList.find(company => String(company.codigo) === String(companyCode)) || null;
-        } catch (error) {
-            console.error("Error en getCompanyByCode:", error);
-            throw error;
+export async function getClientsByCompany(companyId) {
+    try {
+        let companyClients = clientList[companyId];
+
+        if (companyClients == undefined || Object.keys(clientList).length === 0) {
+            try {
+                await loadClients(companyId);
+
+                companyClients = clientList[companyId];
+            } catch (error) {
+                console.error("Error al cargar compañías desde Redis:", error);
+                throw companyClients;
+            }
         }
-    }
 
-    return company;
+        return companyClients;
+    } catch (error) {
+        console.error("Error en getZonesByCompany:", error);
+        throw error;
+    }
 }
 
 export async function executeQuery(connection, query, values) {
@@ -210,21 +248,4 @@ export async function executeQuery(connection, query, values) {
         console.error("Error al ejecutar la query:", error);
         throw error;
     }
-}
-
-function empresaDuenia(codigoBuscado, AempresasGlobal) {
-    if (!AempresasGlobal) {
-        console.error("AempresasGlobal no está definido");
-        return null;
-    }
-
-    for (const key in AempresasGlobal) {
-        if (AempresasGlobal[key].codigo === codigoBuscado) {
-            const e = AempresasGlobal[key];
-            return e;
-        }
-    }
-
-    console.error(`No se encontró la empresa con el código: ${codigoBuscado}`);
-    return null;
 }

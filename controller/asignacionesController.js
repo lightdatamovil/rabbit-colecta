@@ -1,5 +1,6 @@
 import { getAccountBySenderId, getProdDbConfig } from "../db.js";
 import { handleInternalFlex } from "./colectaController/handlers/flex/handleInternalFlex.js";
+import { handleExternalFlex } from "./colectaController/handlers/flex/handleExternalFlex.js";
 import { handleExternalNoFlex } from "./colectaController/handlers/noflex/handleExternalNoFlex.js";
 import { handleInternalNoFlex } from "./colectaController/handlers/noflex/handleInternalNoFlex.js";
 import mysql from "mysql";
@@ -15,13 +16,13 @@ export async function colectar(company, dataQr, userId, profile, autoAssign) {
         const isFlex = dataQr.hasOwnProperty("sender_id");
 
         if (isFlex) {
-            const account = await getAccountBySenderId(dbConnection, dataQr.sender_id);
+            const account = await getAccountBySenderId(dbConnection, company.did, dataQr.sender_id);
 
             if (account) {
                 response = await handleInternalFlex(dbConnection, company.did, userId, profile, dataQr, autoAssign, account);
             } else {
 
-                response = await handleExternalNoFlex(dbConnection, company.did, userId, dataQr, autoAssign);
+                response = await handleExternalFlex(dbConnection, company.did, userId, profile, dataQr, autoAssign);
             }
         } else {
             if (company.did == dataQr.empresa) {

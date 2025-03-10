@@ -2,10 +2,16 @@ import { executeQuery, getProdDbConfig, getCompanyByCode } from "../../../../db.
 import { asignar } from "../../functions/asignar.js";
 import mysql from 'mysql';
 import { insertarPaquete } from "../../functions/insertarPaquete.js";
+import { insertEnviosExteriores } from "../../functions/insertEnviosExteriores.js";
+import axios from 'axios';
+import { updateLastShipmentState } from "../../functions/updateLastShipmentState.js";
+import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentStateMicroService.js";
 
 export async function handleExternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign) {
+
     const senderid = dataQr.sender_id;
     const idshipment = dataQr.id;
+
     let didcliente = -1;
     let didpaquete = -1;
     let estado_envio = -1;
@@ -15,8 +21,10 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
         const sqlColectado = `
             SELECT id, estado 
             FROM envios_historial 
-            WHERE didEnvio = ? LIMIT 1
+            WHERE didEnvio = ? and elim=0 LIMIT 1
         `;
+        console.log(didpaquete, "didpaquete");
+
         const rowsColectado = await executeQuery(dbConnection, sqlColectado, [didpaquete]);
 
         if (rowsColectado.length > 0 && rowsColectado[0].estado == 0) {
@@ -44,7 +52,7 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
 
             const didclienteInterno_ext = clienteexterno.did;
 
-            const idempresaExterna = dataEmpresaExterna.id;
+            const idempresaExterna = externalCompany.did;
             const nombre_fantasia = clienteexterno.nombre_fantasia;
 
             const sqlCuentas = `
@@ -52,6 +60,7 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
                     FROM clientes_cuentas 
                     WHERE superado = 0 AND elim = 0 AND tipoCuenta = 1 AND ML_id_vendedor = ?
                 `;
+
             const rowsCuentas = await executeQuery(dbConnectionExt, sqlCuentas, [senderid]);
 
             if (rowsCuentas.length > 0) {
@@ -76,7 +85,7 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
 
                 if (externalShipmentId !== -1) {
                     const didpaquete_interno = await insertarPaquete(dbConnection, companyId, didclienteInterno_ext, 0, dataQr, 1, 1,);
-                    await insertEnviosExteriores(externalShipmentId, didpaquete_interno, dbConnection, 1, nombre_fantasia, idempresaExterna);
+                    await insertEnviosExteriores(dbConnection, externalShipmentId, didpaquete_interno, 1, nombre_fantasia, idempresaExterna);
 
                     const sqlChofer = `
                             SELECT usuario 
@@ -93,50 +102,19 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
                     }
 
                     if (didchofer > -1) {
-                        if (autoAssign) {
-                            const payload = {
-                                companyId: dataEmpresaExterna.id,
-                                userId: userId,
-                                profile: profile,
-                                appVersion: "null",
-                                brand: "null",
-                                model: "null",
-                                androidVersion: "null",
-                                deviceId: "null",
-                                dataQr: {
-                                    id: '44429054087',
-                                    sender_id: 413658225,
-                                    hash_code: 'ZpFyEQnGa+juvrAxbe83sWRg1S+8qZPyOgXGI1ZiqjY=',
-                                    security_digit: '0'
-
-                                },
-                                driverId: didchofer,
-                                deviceFrom: "Autoasignado de colecta"
-                            };
-
-                            try {
-                                await post('https://asignaciones.lightdata.app/api/asignaciones/asignar', payload);
-                            } catch (error) {
-                                console.error('Error al hacer la solicitud POST:', error);
-                                return { estadoRespuesta: false, mensaje: "Error al asignar paquete al chofer - NOFLEX" };
-                            }
-                        }
-
-                        fsetestadoConector(didpaquete_interno, 0, dbConnectionExt);
+                        await updateLastShipmentState(dbConnectionExt, didpaquete_interno,);
+                        await updateLastShipmentState(dbConnectionExt, externalShipmentId);
 
                         if (autoAssign) {
-                            const dqr = {
-                                id: '44429054087',
-                                sender_id: 413658225,
-                                hash_code: 'ZpFyEQnGa+juvrAxbe83sWRg1S+8qZPyOgXGI1ZiqjY=',
-                                security_digit: '0'
+                            console.log("asignar");
+                            console.log(companyId, userId, profile, dataQr, userId);
+                            console.log(externalCompany.did, userId, profile, dataQr, didchofer);
 
-                            };
 
-                            await asignar(companyId, userId, profile, dqr, userId, "jaja");
+
+                            await asignar(companyId, userId, profile, dataQr, userId);
+                            await asignar(externalCompany.did, userId, profile, dataQr, didchofer);
                         }
-
-                        await fsetestadoConector(dbConnectionExt, externalShipmentId);
 
                         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX" };
                     }
@@ -151,7 +129,7 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
                 await asignar(companyId, userId, profile, dataQr, userId, "jaja");
             }
 
-            await fsetestadoConector(dbConnection, didpaquete);
+            await sendToShipmentStateMicroService(dbConnection, didpaquete);
 
             return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX" };
 
@@ -169,7 +147,7 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
         await executeQuery(dbConnection, queryUpdateEnvios, [dataQr, didpaquete_interno]);
 
 
-        await fsetestadoConector(dbConnection, didpaquete);
+        await sendToShipmentStateMicroService(dbConnection, didpaquete);
         if (autoAssign) {
             await asignar(companyId, userId, profile, dataQr, userId, "kaka");
         }

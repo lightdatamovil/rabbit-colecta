@@ -11,12 +11,22 @@ export async function asignar(companyId, userId, profile, dataQr, driverId) {
         model: "null",
         androidVersion: "null",
         deviceId: "null",
-        dataQr: dataQr,
+        dataQr: JSON.stringify(dataQr),
         driverId: driverId,
         deviceFrom: "Autoasignado de colecta"
     };
     try {
-        await axios.post('https://asignaciones.lightdata.app/api/asignaciones/asignar', payload);
+        console.log(payload);
+
+        const result = await axios.post('http://localhost:13000/api/asignaciones/asignar', payload);
+        if (result.status == 200) {
+            console.log("Asignado correctamente");
+            console.log(result.data);
+
+        } else {
+            console.log("Error al asignar");
+            throw new Error("Error al asignar");
+        }
     } catch (error) {
         console.error('Error al asignar', error);
         throw error;

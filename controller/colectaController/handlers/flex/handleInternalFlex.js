@@ -31,8 +31,10 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
         const sqlColectado = `
             SELECT id, estado 
             FROM envios_historial 
-            WHERE didEnvio = ? LIMIT 1
+            WHERE didEnvio = ? and elim=0 and superado=0
+            LIMIT 1
         `;
+
         const rowsColectado = await executeQuery(dbConnection, sqlColectado, [shipmentId]);
 
         if (rowsColectado.length > 0 && rowsColectado[0].estado == 0) {

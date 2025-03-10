@@ -13,23 +13,23 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         const shipmentIdFromDataQr = dataQr.did;
 
-        const companyIdFromDataQr = dataQr.empresa;
+        const querySelectEnviosExteriores = 'SELECT didLocal FROM envios_exteriores WHERE superado = 0 AND elim = 0 AND didExterno = ? AND didEmpresa = ?';
 
-        const querySelectEnviosExteriores = 'SELECT didInterno FROM envios_exteriores WHERE superado = 0 AND elim = 0 AND didExterno = ? AND didEmpresa = ?';
-
-        const paqueteExterno = await executeQuery(dbConnection, querySelectEnviosExteriores, [shipmentIdFromDataQr, companyIdFromDataQr]);
+        const paqueteExterno = await executeQuery(dbConnection, querySelectEnviosExteriores, [shipmentIdFromDataQr, companyId]);
 
         if (paqueteExterno.length == 0) {
 
-            const externalCompany = await getCompanyById(dataQr.empresa);
+            const externalCompany = await getCompanyById(companyId);
 
             const dbConfigExt = getProdDbConfig(externalCompany);
             const externalDbConnection = mysql.createConnection(dbConfigExt);
             externalDbConnection.connect();
 
             const clientList = await getClientsByCompany(externalCompany);
+            console.log(clientList, "dassdsada");
 
-            const client = clientList.find(client => client.id == dataQr.cliente);
+
+            const client = clientList[companyId][dataQr.cliente];
 
             const didinterno = await insertarPaquete(
                 dbConnection,
@@ -47,7 +47,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                 shipmentIdFromDataQr,
                 0,
                 client.nombre || "",
-                companyIdFromDataQr,
+                companyId,
             );
 
             await updateLastShipmentState(dbConnection, didinterno);

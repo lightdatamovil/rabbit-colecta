@@ -3,7 +3,7 @@ import { executeQuery } from "../../../db.js";
 export async function insertEnviosExteriores(dbConnection, internoShipmentId, externalShipmentId, flex, externalName, externalCompanyId) {
     try {
         const queryInsertEnviosExteriores = `
-            INSERT INTO envios_exteriores (didInterno, didExterno, flex, cliente, didEmpresa)
+            INSERT INTO envios_exteriores (didLocal, didExterno, flex, cliente, didEmpresa)
             VALUES (?, ?, ?, ?, ?)
         `;
 
