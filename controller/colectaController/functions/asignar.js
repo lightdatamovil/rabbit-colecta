@@ -17,7 +17,7 @@ export async function asignar(companyId, userId, profile, dataQr, driverId) {
     };
 
     try {
-        const result = await axios.post('http://localhost:13000/api/asignaciones/asignar', payload);
+        const result = await axios.post('https://asignaciones.lightdata.app/api/asignaciones/asignar', payload);
         if (result.status == 200) {
             console.log("Asignado correctamente");
         } else {
