@@ -4,28 +4,34 @@ import { insertarPaquete } from "../../functions/insertarPaquete.js";
 import { updateLastShipmentState } from "../../functions/updateLastShipmentState.js";
 import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentStateMicroService.js";
 
-export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign) {
+export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign, account) {
     const senderId = dataQr.sender_id;
     const mlShipmentId = dataQr.id;
-
+    let shipmentId;
+    let estado_envio;
+    let didcliente;
+    let didCuenta;
+    let resultBuscarEnvio;
     const sql = `
         SELECT did, estado_envio, didCliente, didCuenta
         FROM envios 
-        WHERE superado = 0 AND elim = 0 AND ml_shipment_id = ? AND ml_vendedor_id = ? 
+        WHERE ml_shipment_id = ? AND ml_vendedor_id = ? 
         LIMIT 1
     `;
-    const result = await executeQuery(dbConnection, sql, [mlShipmentId, senderId]);
 
-    if (result.length === 0) {
-        return { estadoRespuesta: false, mensaje: "No se encontró el paquete - FLEX" };
+    resultBuscarEnvio = await executeQuery(dbConnection, sql, [mlShipmentId, senderId]);
+
+    if (resultBuscarEnvio.length === 0) {
+        shipmentId = await insertarPaquete(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0);
+        resultBuscarEnvio = await executeQuery(dbConnection, sql, [mlShipmentId, senderId]);
     }
+    const row = resultBuscarEnvio[0];
 
-    const row = result[0];
+    shipmentId = row.did;
+    estado_envio = row.estado_envio;
+    didcliente = row.didCliente;
+    didCuenta = row.didCuenta;
 
-    const shipmentId = row.did;
-    const estado_envio = row.estado_envio;
-    const didcliente = row.didCliente;
-    const didCuenta = row.didCuenta;
 
     if (shipmentId) {
         const sqlColectado = `
@@ -41,7 +47,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
             return { estadoRespuesta: false, mensaje: "El paquete ya se encuentra colectado - FLEX" };
         }
 
-        const didpaquete_interno = await insertarPaquete(dbConnection, companyId, didcliente, 0, dataQr, 1, 0,);
+        // const didpaquete_interno = await insertarPaquete(dbConnection, companyId, didcliente, 0, dataQr, 1, 0,);
 
         const queryUpdateEnvios = `
                 UPDATE envios 
@@ -50,7 +56,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
                 LIMIT 1
             `;
 
-        await executeQuery(dbConnection, queryUpdateEnvios, [JSON.stringify(dataQr), didpaquete_interno]);
+        await executeQuery(dbConnection, queryUpdateEnvios, [JSON.stringify(dataQr), shipmentId]);
 
         await updateLastShipmentState(dbConnection, shipmentId);
 

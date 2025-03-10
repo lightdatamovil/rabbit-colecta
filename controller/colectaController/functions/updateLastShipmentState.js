@@ -57,7 +57,7 @@ export async function updateLastShipmentState(dbConnection, did) {
 
         return { estadoRespuesta: true, mensaje: "Se guardó correctamente" };
     } catch (error) {
-        console.error("Error en fsetestadoConector:", error);
+        console.error("Error en updateLastShipmentState:", error);
         throw error;
     }
 }

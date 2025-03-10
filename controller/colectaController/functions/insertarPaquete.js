@@ -44,6 +44,7 @@ export async function insertarPaquete(dbConnection, companyId, clientId, account
                 LIMIT 1
             `;
 
+
             await executeQuery(dbConnection, updateSql, [result.insertId, result.insertId]);
         }
 

@@ -153,13 +153,9 @@ async function loadAccountList(dbConnection, companyId, senderId) {
 
 export async function getAccountBySenderId(dbConnection, companyId, senderId) {
     try {
-        if (accountList === undefined || accountList === null || Object.keys(accountList).length === 0) {
+        if (accountList === undefined || accountList === null || Object.keys(accountList).length === 0 || !accountList[companyId]) {
             await loadAccountList(dbConnection, companyId, senderId);
         }
-        console.log("accountList", accountList);
-        console.log("companyId", companyId);
-        console.log("senderId", senderId);
-
 
         const account = accountList[companyId][senderId];
 
@@ -170,35 +166,32 @@ export async function getAccountBySenderId(dbConnection, companyId, senderId) {
     }
 }
 
-async function loadClients(companyId) {
+async function loadClients(dbConnection, companyId) {
 
     // Verifica si la compañía especificada existe en la lista de compañías
     if (!clientList[companyId]) {
         clientList[companyId] = {}
     }
 
-    // Obtiene la configuración de la base de datos de la compañía especificada
-    const dbConfig = getProdDbConfig(companyId);
-    const dbConnection = mysql.createConnection(dbConfig);
-    dbConnection.connect();
-
     try {
         const queryUsers = "SELECT * FROM clientes";
         const resultQueryUsers = await executeQuery(dbConnection, queryUsers, []);
 
-        for (let i = 0; i < resultQueryUsers.length; i++) {
-            const row = resultQueryUsers[i];
+        resultQueryUsers.forEach(row => {
+            const keySender = row.did;
 
-            clientList[companyId][row.id] = {
-                id_origen: row.id_origen,
+            if (!clientList[companyId][keySender]) {
+                clientList[companyId][keySender] = {};
+            }
+
+            clientList[companyId][keySender] = {
                 fecha_sincronizacion: row.fecha_sincronizacion,
                 did: row.did,
-                codigo: row.codigo,
+                codigo: row.codigoVinculacionLogE,
                 nombre: row.nombre_fantasia,
-                codigos: row.codigos,
-                dataGeo: row.dataGeo,
             };
-        }
+        });
+
         return clientList[companyId];
     } catch (error) {
         console.error(`Error en getClients para la compañía ${companyId}:`, error);
@@ -209,15 +202,15 @@ async function loadClients(companyId) {
 }
 
 
-export async function getClientsByCompany(companyId) {
+export async function getClientsByCompany(dbConnection, company) {
     try {
-        let companyClients = clientList[companyId];
+        let companyClients = clientList[company.did];
 
         if (companyClients == undefined || Object.keys(clientList).length === 0) {
             try {
-                await loadClients(companyId);
+                await loadClients(dbConnection, company.did);
 
-                companyClients = clientList[companyId];
+                companyClients = clientList[company.did];
             } catch (error) {
                 console.error("Error al cargar compañías desde Redis:", error);
                 throw companyClients;

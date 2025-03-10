@@ -7,6 +7,7 @@ import { insertarPaquete } from "../../functions/insertarPaquete.js";
 import { insertEnviosExteriores } from "../../functions/insertEnviosExteriores.js";
 import { informePro } from "../../functions/informePro.js";
 
+let didenvio;
 export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign) {
     try {
         const company = await getCompanyById(companyId);
@@ -15,21 +16,19 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         const querySelectEnviosExteriores = 'SELECT didLocal FROM envios_exteriores WHERE superado = 0 AND elim = 0 AND didExterno = ? AND didEmpresa = ?';
 
-        const paqueteExterno = await executeQuery(dbConnection, querySelectEnviosExteriores, [shipmentIdFromDataQr, companyId]);
+        const paqueteExterno = await executeQuery(dbConnection, querySelectEnviosExteriores, [shipmentIdFromDataQr, dataQr.empresa]);
+
 
         if (paqueteExterno.length == 0) {
-
-            const externalCompany = await getCompanyById(companyId);
+            const externalCompany = await getCompanyById(dataQr.empresa);
 
             const dbConfigExt = getProdDbConfig(externalCompany);
             const externalDbConnection = mysql.createConnection(dbConfigExt);
             externalDbConnection.connect();
 
-            const clientList = await getClientsByCompany(externalCompany);
-            console.log(clientList, "dassdsada");
+            const companyClientList = await getClientsByCompany(externalDbConnection, externalCompany);
 
-
-            const client = clientList[companyId][dataQr.cliente];
+            const client = companyClientList[String(dataQr.cliente)];
 
             const didinterno = await insertarPaquete(
                 dbConnection,
@@ -78,7 +77,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
             await sendToShipmentStateMicroService(dataQr.empresa, chofer[0].usuario, shipmentIdFromDataQr);
             didenvio = didinterno;
         } else {
-            didenvio = paqueteExterno[0].didInterno;
+            didenvio = paqueteExterno[0].didLocal;
         }
 
         const querySelectEstadoEnvio = 'SELECT estado_envio FROM envios WHERE did = ? LIMIT 1';

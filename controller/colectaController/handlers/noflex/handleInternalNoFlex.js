@@ -9,15 +9,15 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
 
         const querySelectEnvios = `SELECT estado_envio, choferAsignado FROM envios WHERE superado = 0 AND elim = 0 AND did = ? LIMIT 1`;
 
-        if (estadoActual === 5 || estadoActual === 9 || estadoActual === 8 || estadoActual === 0) {
-            return { estadoRespuesta: false, mensaje: "yA FUE ENTREGADO O CANCELADO O ESTA COKECTADI" };
+        const shipmentStateResult = await executeQuery(dbConnection, querySelectEnvios, [didenvioPaquete]);
+        const shipmentState = shipmentStateResult[0].estado_envio;
+        if (shipmentState === 5 || shipmentState === 9 || shipmentState === 8 || shipmentState === 0) {
+            return { estadoRespuesta: false, mensaje: "El paquete ya fue entregado o cancelado" };
         }
 
-        const shipmentState = await executeQuery(dbConnection, querySelectEnvios, [didenvioPaquete]);
+        const yaEstaAsignado = shipmentStateResult[0].choferAsignado == userId;
 
-        const yaEstaAsignado = shipmentState[0].choferAsignado == userId;
-
-        if (shipmentState.length === 0) {
+        if (shipmentStateResult.length === 0) {
             return { estadoRespuesta: false, mensaje: "Paquete no encontrado - NOFLEX" };
         }
 

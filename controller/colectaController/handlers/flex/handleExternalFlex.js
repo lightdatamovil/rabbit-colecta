@@ -3,7 +3,6 @@ import { asignar } from "../../functions/asignar.js";
 import mysql from 'mysql';
 import { insertarPaquete } from "../../functions/insertarPaquete.js";
 import { insertEnviosExteriores } from "../../functions/insertEnviosExteriores.js";
-import axios from 'axios';
 import { updateLastShipmentState } from "../../functions/updateLastShipmentState.js";
 import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentStateMicroService.js";
 
@@ -23,7 +22,6 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
             FROM envios_historial 
             WHERE didEnvio = ? and elim=0 LIMIT 1
         `;
-        console.log(didpaquete, "didpaquete");
 
         const rowsColectado = await executeQuery(dbConnection, sqlColectado, [didpaquete]);
 
@@ -70,17 +68,24 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
                 const sqlEnvios = `
                         SELECT did, estado_envio, didCliente, didCuenta 
                         FROM envios 
-                        WHERE superado = 0 AND elim = 0 AND ml_shipment_id = ? AND ml_vendedor_id = ? 
+                        WHERE ml_shipment_id = ? AND ml_vendedor_id = ? 
                         LIMIT 1
                     `;
 
-                const rowsEnvios = await executeQuery(dbConnectionExt, sqlEnvios, [idshipment, senderid]);
+                let rowsEnvios = await executeQuery(dbConnectionExt, sqlEnvios, [idshipment, senderid]);
 
                 let externalShipmentId = -1;
                 if (rowsEnvios.length > 0) {
                     externalShipmentId = rowsEnvios[0].did;
                 } else {
                     externalShipmentId = await insertarPaquete(dbConnectionExt, idempresaExterna, didcliente_ext, didcuenta_ext, dataQr, 1, 0);
+
+                    rowsEnvios = await executeQuery(dbConnectionExt, sqlEnvios, [idshipment, senderid]);
+                    rowsEnvios[0].estado_envio = -1;
+                }
+
+                if (rowsEnvios[0].estado_envio === 0) {
+                    return { estadoRespuesta: false, mensaje: "Paquete ya colectado" };
                 }
 
                 if (externalShipmentId !== -1) {
@@ -97,22 +102,18 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
 
                     const didchofer = rowsChofer.length > 0 ? rowsChofer[0].usuario : -1;
 
-                    if (rowsEnvios[0].estado_envio === 0) {
-                        return { estadoRespuesta: false, mensaje: "Paquete ya colectado" };
-                    }
-
                     if (didchofer > -1) {
-                        await updateLastShipmentState(dbConnectionExt, didpaquete_interno,);
+                        await updateLastShipmentState(dbConnection, didpaquete_interno);
                         await updateLastShipmentState(dbConnectionExt, externalShipmentId);
 
                         if (autoAssign) {
-                            console.log("asignar");
-                            console.log(companyId, userId, profile, dataQr, userId);
-                            console.log(externalCompany.did, userId, profile, dataQr, didchofer);
-
-
-
-                            await asignar(companyId, userId, profile, dataQr, userId);
+                            const dqr = {
+                                did: didpaquete_interno,
+                                empresa: companyId,
+                                local: 1,
+                                cliente: didclienteInterno_ext,
+                            };
+                            await asignar(companyId, userId, profile, dqr, userId);
                             await asignar(externalCompany.did, userId, profile, dataQr, didchofer);
                         }
 
