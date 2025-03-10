@@ -196,9 +196,7 @@ async function loadClients(dbConnection, companyId) {
     } catch (error) {
         console.error(`Error en getClients para la compañía ${companyId}:`, error);
         throw error;
-    } finally {
-        dbConnection.end();
-    }
+    } 
 }
 
 

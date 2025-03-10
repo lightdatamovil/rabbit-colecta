@@ -16,20 +16,22 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         const querySelectEnviosExteriores = 'SELECT didLocal FROM envios_exteriores WHERE superado = 0 AND elim = 0 AND didExterno = ? AND didEmpresa = ?';
 
-        const paqueteExterno = await executeQuery(dbConnection, querySelectEnviosExteriores, [shipmentIdFromDataQr, dataQr.empresa]);
+        const paqueteExterno = await executeQuery(dbConnection, querySelectEnviosExteriores, [shipmentIdFromDataQr, companyId]);
 
 
         if (paqueteExterno.length == 0) {
+            
             const externalCompany = await getCompanyById(dataQr.empresa);
-
+            
             const dbConfigExt = getProdDbConfig(externalCompany);
             const externalDbConnection = mysql.createConnection(dbConfigExt);
+       
             externalDbConnection.connect();
-
+            
             const companyClientList = await getClientsByCompany(externalDbConnection, externalCompany);
-
+            
             const client = companyClientList[String(dataQr.cliente)];
-
+            
             const didinterno = await insertarPaquete(
                 dbConnection,
                 externalCompany.did,
@@ -49,18 +51,24 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                 companyId,
             );
 
+            console.log("me quede antes");
+            
             await updateLastShipmentState(dbConnection, didinterno);
+            console.log(didinterno);
+            console.log("hola");
             await updateLastShipmentState(externalDbConnection, shipmentIdFromDataQr);
+            console.log("alo");
+            
             //
             // hacer funcion
             const querySelectSistemUsuariosAccesos = 'SELECT usuario FROM sistema_usuarios_accesos WHERE codvinculacion = ?';
-
+            
             const chofer = await executeQuery(externalDbConnection, querySelectSistemUsuariosAccesos, [company.codigo]);
-
+          externalDbConnection.end();  
             if (chofer.length > 0) {
-
+                
                 await asignar(dataQr.empresa, userId, profile, dataQr, chofer[0].usuario);
-
+                
                 if (autoAssign) {
                     const dqr = {
                         interno: dataQr.interno,
@@ -77,6 +85,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
             await sendToShipmentStateMicroService(dataQr.empresa, chofer[0].usuario, shipmentIdFromDataQr);
             didenvio = didinterno;
         } else {
+            console.log("no entro  al if ");
             didenvio = paqueteExterno[0].didLocal;
         }
 
