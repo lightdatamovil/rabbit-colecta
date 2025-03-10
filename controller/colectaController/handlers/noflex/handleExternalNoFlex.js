@@ -30,24 +30,6 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         const client = companyClientList[dataQr.cliente];
 
-        const didinterno = await insertarPaquete(
-            dbConnection,
-            companyId,
-            client.did,
-            0,
-            { id: "", sender_id: "" },
-            0,
-            1,
-        );
-
-        await insertEnviosExteriores(
-            dbConnection,
-            didinterno,
-            shipmentIdFromDataQr,
-            0,
-            client.nombre || "",
-            companyId,
-        );
 
 
         const querySelectSistemUsuariosAccesos = 'SELECT usuario FROM sistema_usuarios_accesos WHERE codvinculacion = ?';
@@ -56,10 +38,28 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         const chofer = await executeQuery(externalDbConnection, querySelectSistemUsuariosAccesos, [company.codigo]);
 
-        externalDbConnection.end();
 
         if (chofer.length > 0) {
 
+            const didinterno = await insertarPaquete(
+                dbConnection,
+                companyId,
+                client.did,
+                0,
+                { id: "", sender_id: "" },
+                0,
+                1,
+                chofer[0].usuario
+            );
+
+            await insertEnviosExteriores(
+                dbConnection,
+                didinterno,
+                shipmentIdFromDataQr,
+                0,
+                client.nombre || "",
+                externalCompany.did,
+            );
             // externo
             await asignar(dataQr.empresa, userId, profile, dataQr, chofer[0].usuario);
 
@@ -73,11 +73,12 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                 // interno
                 await asignar(companyId, userId, profile, dqr, userId);
             }
+            await updateLastShipmentState(dbConnection, didinterno);
+            await updateLastShipmentState(externalDbConnection, shipmentIdFromDataQr);
+            await sendToShipmentStateMicroService(companyId, userId, didinterno);
+            await sendToShipmentStateMicroService(dataQr.empresa, chofer[0].usuario, shipmentIdFromDataQr);
         }
-        await updateLastShipmentState(dbConnection, didinterno);
-        await updateLastShipmentState(externalDbConnection, shipmentIdFromDataQr);
-        await sendToShipmentStateMicroService(companyId, userId, didinterno);
-        await sendToShipmentStateMicroService(dataQr.empresa, chofer[0].usuario, shipmentIdFromDataQr);
+        externalDbConnection.end();
 
         return { estadoRespuesta: true, mensaje: "Paquete colectado con exito" };
     } catch (error) {
