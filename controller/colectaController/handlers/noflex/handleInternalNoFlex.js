@@ -11,7 +11,12 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
 
         const shipmentStateResult = await executeQuery(dbConnection, querySelectEnvios, [didenvioPaquete]);
         const shipmentState = shipmentStateResult[0].estado_envio;
-        if (shipmentState === 5 || shipmentState === 9 || shipmentState === 8 || shipmentState === 0) {
+
+        if (shipmentState === 0) {
+            return { estadoRespuesta: false, mensaje: "El paquete ya fue colectado" };
+        }
+
+        if (shipmentState === 5 || shipmentState === 9 || shipmentState === 8) {
             return { estadoRespuesta: false, mensaje: "El paquete ya fue entregado o cancelado" };
         }
 
