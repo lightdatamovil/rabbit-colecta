@@ -50,10 +50,6 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
             companyId,
         );
 
-        await updateLastShipmentState(dbConnection, didinterno);
-        await updateLastShipmentState(externalDbConnection, shipmentIdFromDataQr);
-        await sendToShipmentStateMicroService(companyId, userId, didinterno);
-        await sendToShipmentStateMicroService(dataQr.empresa, chofer[0].usuario, shipmentIdFromDataQr);
 
         const querySelectSistemUsuariosAccesos = 'SELECT usuario FROM sistema_usuarios_accesos WHERE codvinculacion = ?';
 
@@ -78,6 +74,10 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                 await asignar(companyId, userId, profile, dqr, userId);
             }
         }
+        await updateLastShipmentState(dbConnection, didinterno);
+        await updateLastShipmentState(externalDbConnection, shipmentIdFromDataQr);
+        await sendToShipmentStateMicroService(companyId, userId, didinterno);
+        await sendToShipmentStateMicroService(dataQr.empresa, chofer[0].usuario, shipmentIdFromDataQr);
 
         return { estadoRespuesta: true, mensaje: "Paquete colectado con exito" };
     } catch (error) {
