@@ -68,7 +68,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                     interno: dataQr.interno,
                     did: didinterno,
                     cliente: dataQr.cliente,
-                    empresa: dataQr.empresa,
+                    empresa: companyId,
                 };
                 // interno
                 await asignar(companyId, userId, profile, dqr, userId);
