@@ -1,49 +1,45 @@
 import { executeQuery } from "../../../../db.js";
-import { asignar } from "../../functions/asignar.js";
+import { assign } from "../../functions/assign.js";
+import { checkearEstadoEnvio } from "../../functions/checkarEstadoEnvio.js";
 import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentStateMicroService.js";
 import { updateLastShipmentState } from "../../functions/updateLastShipmentState.js";
 
+/// Esta funcion checkea si el envio ya fue colectado, entregado o cancelado
+/// Busca el chofer asignado al envio
+/// Si el envio no esta asignado y se quiere autoasignar, lo asigna
+/// Actualiza el estado del envio en el micro servicio
+/// Actualiza el estado del envio en la base de datos
 export async function handleInternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign) {
     try {
-        const didenvioPaquete = dataQr.did;
+        const shipmentId = dataQr.did;
 
-        const querySelectEnvios = `SELECT estado_envio, choferAsignado FROM envios WHERE superado = 0 AND elim = 0 AND did = ? LIMIT 1`;
+        /// Chequeo si el envio ya fue colectado, entregado o cancelado
+        await checkearEstadoEnvio(dbConnection, shipmentId);
 
-        const shipmentStateResult = await executeQuery(dbConnection, querySelectEnvios, [didenvioPaquete]);
-        const shipmentState = shipmentStateResult[0].estado_envio;
+        /// Busco el estado del envio y el chofer asignado
+        const querySelectEnvios = `SELECT choferAsignado FROM envios WHERE superado = 0 AND elim = 0 AND did = ? LIMIT 1`;
+        const resultChoferAsignado = await executeQuery(dbConnection, querySelectEnvios, [shipmentId]);
 
-        if (shipmentState === 0) {
-            return { estadoRespuesta: false, mensaje: "El paquete ya fue colectado" };
+        /// Si no encuentro el envio mando error
+        if (resultChoferAsignado.length === 0) {
+            return { estadoRespuesta: false, mensaje: "Paquete no encontrado" };
         }
 
-        if (shipmentState === 5 || shipmentState === 9 || shipmentState === 8) {
-            return { estadoRespuesta: false, mensaje: "El paquete ya fue entregado o cancelado" };
+        const isAlreadyAssigned = resultChoferAsignado[0].choferAsignado == userId;
+
+        /// Si el envio no esta asignado y se quiere autoasignar, lo asigno
+        if (!isAlreadyAssigned && autoAssign) {
+            await assign(companyId, userId, profile, dataQr, userId);
         }
 
-        const yaEstaAsignado = shipmentStateResult[0].choferAsignado == userId;
+        /// Actualizamos el estado del envio en el micro servicio
+        await sendToShipmentStateMicroService(companyId, userId, shipmentId, 0, null, null);
 
-        if (shipmentStateResult.length === 0) {
-            return { estadoRespuesta: false, mensaje: "Paquete no encontrado - NOFLEX" };
-        }
+        /// Actualizamos el estado del envio en la base de datos
+        await updateLastShipmentState(dbConnection, shipmentId);
 
-        const querySelectEnviosHistorial = `SELECT estado FROM envios_historial WHERE didEnvio = ? AND estado = 0`;
-
-        const estado = await executeQuery(dbConnection, querySelectEnviosHistorial, [didenvioPaquete]);
-
-        if (estado.length > 0) {
-            return { estadoRespuesta: false, mensaje: "El paquete ya se encuentra colectado - NOFLEX" };
-        }
-
-        if (autoAssign && !yaEstaAsignado) {
-            await asignar(companyId, userId, profile, dataQr, userId);
-        }
-
-        await sendToShipmentStateMicroService(companyId, userId, didenvioPaquete, 0, null, null);
-
-        await updateLastShipmentState(dbConnection, didenvioPaquete);
-
-        return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - NOFLEX" };
-
+        const body = informe(dbConnection, userId);
+        return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
         console.error("Error en handleInternoNoFlex:", error);
         throw error;

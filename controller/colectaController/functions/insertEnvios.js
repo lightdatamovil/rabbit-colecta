@@ -1,7 +1,7 @@
 import { executeQuery } from '../../../db.js';
 import axios from "axios";
 
-export async function insertarPaquete(dbConnection, companyId, clientId, accountId, dataQr, flex, externo, driverId) {
+export async function insertEnvios(dbConnection, companyId, clientId, accountId, dataQr, flex, externo, driverId) {
     const lote = Math.random().toString(36).substring(2, 15);
     const fecha_inicio = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const idshipment = dataQr.id;

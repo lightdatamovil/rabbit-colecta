@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export async function asignar(companyId, userId, profile, dataQr, driverId) {
+export async function assign(companyId, userId, profile, dataQr, driverId) {
 
     const payload = {
         companyId: Number(companyId),

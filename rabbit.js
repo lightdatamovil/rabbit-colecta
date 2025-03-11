@@ -1,6 +1,6 @@
 import { connect } from 'amqplib';
 import dotenv from 'dotenv';
-import { colectar } from './controller/asignacionesController.js';
+import { colectar } from './controller/colectaController.js';
 import { verifyParameters } from './src/funciones/verifyParameters.js';
 import { getCompanyById, redisClient } from './db.js';
 
@@ -22,6 +22,7 @@ async function startConsumer() {
         console.log(`[*] Esperando mensajes en la cola "${QUEUE_NAME_COLECTA}"`);
 
         channel.consume(QUEUE_NAME_COLECTA, async (msg) => {
+            console.time("Tiempo de ejecución");
             if (msg !== null) {
                 const body = JSON.parse(msg.content.toString());
                 try {
@@ -41,6 +42,7 @@ async function startConsumer() {
                     result.feature = "colecta";
 
                     channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), { persistent: true });
+                    console.timeEnd("Tiempo de ejecución");
                     console.log(
                         "[x] Mensaje enviado al canal",
                         body.channel + ":",
@@ -59,6 +61,7 @@ async function startConsumer() {
                     if (a) {
                         console.log("Mensaje enviado al canal", body.channel + ":", { feature: body.feature, estadoRespuesta: false, mensaje: error.message });
                     }
+                    console.timeEnd("Tiempo de ejecución");
                 } finally {
                     channel.ack(msg);
                 }
