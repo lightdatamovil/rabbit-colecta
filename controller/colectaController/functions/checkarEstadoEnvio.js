@@ -1,3 +1,4 @@
+import { executeQuery } from "../../../db.js";
 
 /// Checkea si el envio ya fue colectado, entregado o cancelado
 export async function checkearEstadoEnvio(dbConnection, shipmentId) {

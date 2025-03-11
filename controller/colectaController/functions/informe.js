@@ -1,78 +1,72 @@
-import { executeQuery, getClientsByCompany } from "../../../db.js";
+import { executeQuery } from '../../../db.js'; // Asegúrate de importar correctamente executeQuery
 
-export async function informe(dbConnection, companyId, clientId, userId, shipmentId) {
-    const hoy = new Date().toISOString().split('T')[0];
-    let aIngresarHoy = 0;
-    let ingresadosHoyAPlantaCliente = 0;
-    let choferAsignado = "Sin asignar";
-    let zonaEntrega = "";
-    let sucursal = "";
-    let chofer = 0;
-
+export async function informe(dbConnection,clientId, userId, shipmentId) {
     try {
-        const sql1 = `
-            SELECT eh.estado 
-            FROM envios_historial AS eh
-            JOIN envios AS e 
-                ON e.elim=0 AND e.superado=0 AND e.didCliente = ? AND e.did = eh.didEnvio
-            WHERE eh.elim=0 AND eh.superado=0 
-            AND (eh.autofecha BETWEEN ? AND ?) 
-            AND eh.estado IN (7, 0, 1);
-        `;
+        let clientename = "";
+        let hoy = new Date().toISOString().split('T')[0];
+        let ayer = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        const rows1 = await executeQuery(dbConnection, sql1, [clientId, `${hoy} 00:00:00`, `${hoy} 23:59:59`]);
-
-        rows1.forEach(row => {
-            if (row.estado === 1) {
-                ingresadosHoyAPlantaCliente++;
-            } else {
-                aIngresarHoy++;
-            }
-        });
-
-        const sql2 = `
-            SELECT COUNT(id) AS total 
-            FROM envios_historial 
-            WHERE elim=0 AND quien IN (${userId}) 
-            AND (autofecha BETWEEN ? AND ?) 
-            AND estado = 1;
-        `;
-
-        const rows2 = await executeQuery(dbConnection, sql2, [`${hoy} 00:00:00`, `${hoy} 23:59:59`]);
-        chofer = rows2[0]?.total || 0;
-
+        // Obtener nombre del cliente
+        let sql = "SELECT nombre_fantasia FROM clientes WHERE superado=0 AND elim=0 AND did = ?";
+        let result = await executeQuery(dbConnection, sql, [clientId]);
+        if (result.length > 0) {
+            clientename = result[0].nombre_fantasia;
+        }
+        
+        // Ingresados hoy
+        sql = `SELECT COUNT(id) as total FROM envios 
+               WHERE superado=0 AND elim=0 
+               AND autofecha BETWEEN ? AND ? 
+               AND didCliente = ?`;
+        result = await executeQuery(dbConnection, sql, [`${hoy} 00:00:00`, `${hoy} 23:59:59`, clientId]);
+        let ingresadoshoy = result.length > 0 ? result[0].total : 0;
+        
+        // Total a colectar del cliente
+        sql = `SELECT COUNT(e.id) as total FROM envios e
+               JOIN envios_historial eh ON eh.elim=0 AND eh.superado=0 AND eh.estado=7 AND eh.didEnvio = e.did 
+               WHERE e.superado=0 AND e.elim=0 AND e.didCliente = ? AND eh.fecha > ?`;
+        result = await executeQuery(dbConnection, sql, [clientId, `${ayer} 00:00:00`]);
+        let cliente_total = result.length > 0 ? result[0].total : 0;
+        let aingresarhoy = cliente_total;
+        
+        let choferasignado = "";
+        let zonaentrega = "";
+        
+        // Datos del paquete
         if (shipmentId > 0) {
-            const sql3 = `
-                SELECT ez.nombre AS zona, e.choferAsignado, sd.nombre AS sucursal
-                FROM envios AS e 
-                LEFT JOIN envios_zonas AS ez 
-                    ON ez.elim=0 AND ez.superado=0 AND ez.did = e.didEnvioZona
-                LEFT JOIN sucursales_distribucion AS sd 
-                    ON sd.elim=0 AND sd.superado=0 AND sd.did = e.didSucursalDistribucion
-                WHERE e.superado=0 AND e.elim=0 AND e.did = ?;
-            `;
-
-            const rows3 = await executeQuery(dbConnection, sql3, [shipmentId]);
-
-            if (rows3.length > 0) {
-                choferAsignado = rows3[0].choferAsignado || 'Sin asignar';
-                zonaEntrega = rows3[0].zona || "";
-                sucursal = rows3[0].sucursal || "";
+            sql = `SELECT ez.nombre as zona, CONCAT(su.nombre, ' ', su.apellido) as chofer
+                   FROM envios e
+                   LEFT JOIN envios_zonas ez ON ez.elim=0 AND ez.superado=0 AND ez.did = e.didEnvioZona
+                   LEFT JOIN envios_asignaciones ea ON ea.elim=0 AND ea.superado=0 AND ea.didEnvio = e.did
+                   LEFT JOIN sistema_usuarios su ON su.superado=0 AND su.elim=0 AND su.did = ea.operador
+                   WHERE e.superado=0 AND e.elim=0 AND e.did = ?`;
+            result = await executeQuery(dbConnection, sql, [shipmentId]);
+            if (result.length > 0) {
+                choferasignado = result[0].chofer || "";
+                zonaentrega = result[0].zona || "";
             }
         }
-        const companyClients = await getClientsByCompany(dbConnection, companyId);
-        return {
-            cliente: `Cliente ${companyClients[clientId].nombre}`,
-            aIngresarHoy,
-            ingresadosHoyAPlantaCliente,
-            ingresadosHoyChofer: chofer,
-            choferAsignado,
-            sucursal,
-            zonaEntrega
-        };
+        
+        // Retirados hoy por mí
+        sql = `SELECT COUNT(id) as total FROM envios_historial 
+               WHERE superado=0 AND elim=0 AND quien IN (?) 
+               AND autofecha BETWEEN ? AND ? AND estado=0`;
+        result = await executeQuery(dbConnection, sql, [userId, `${hoy} 00:00:00`, `${hoy} 23:59:59`]);
+        let retiradoshoymi = result.length > 0 ? result[0].total : 0;
 
+        return {
+            cliente: clientename,
+            ingresados: 0,
+            cliente_total,
+            retiradoshoymi,
+            aingresarhoy,
+            ingresadoshoy,
+            ingresadosahora: 0,
+            choferasignado,
+            zonaentrega
+        };
     } catch (error) {
-        console.error("Error en informe:", error);
+        console.error("Error en obtenerTotales:", error);
         throw error;
     }
 }

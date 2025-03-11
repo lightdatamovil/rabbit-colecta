@@ -28,7 +28,7 @@ export async function colectar(company, dataQr, userId, profile, autoAssign) {
 
                 /// Si la cuenta no existe, es externo
             } else {
-                response = await handleExternalFlex(dbConnection, company.did, userId, profile, dataQr, autoAssign);
+                response = await handleExternalFlex(dbConnection, company.did, userId, profile, dataQr, autoAssign,company);
             }
             /// Si no es flex
         } else {

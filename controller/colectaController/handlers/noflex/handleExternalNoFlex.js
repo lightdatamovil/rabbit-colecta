@@ -43,7 +43,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
         const internalCompany = await getCompanyById(companyId);
 
         /// Busco el chofer que se crea en la vinculacion de logisticas
-        const driver = await checkIfExistLogisticAsDriverInExternalCompany(externalDbConnection, internalCompany);
+        const driver = await checkIfExistLogisticAsDriverInExternalCompany(externalDbConnection, internalCompany.codigo);
         if (!driver) {
             externalDbConnection.end();
 
@@ -93,7 +93,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
         await updateLastShipmentState(externalDbConnection, shipmentIdFromDataQr);
         await sendToShipmentStateMicroService(dataQr.empresa, driver, shipmentIdFromDataQr);
 
-        const body = await informe(externalDbConnection, companyId, clientIdFromDataQr, userId, didinterno);
+        const body = await informe(externalDbConnection, clientIdFromDataQr, userId, didinterno);
 
         externalDbConnection.end();
 

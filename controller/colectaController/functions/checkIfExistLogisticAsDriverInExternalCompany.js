@@ -1,7 +1,10 @@
+import { executeQuery } from "../../../db.js";
+
 export async function checkIfExistLogisticAsDriverInExternalCompany(dbConnection, syncCode) {
     try {
         const querySelectSistemUsuariosAccesos = 'SELECT usuario FROM sistema_usuarios_accesos WHERE codvinculacion = ?';
         const chofer = await executeQuery(dbConnection, querySelectSistemUsuariosAccesos, [syncCode]);
+console.log(chofer,"chofer");
 
         if (chofer.length == 0) {
             return;
