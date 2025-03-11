@@ -3,6 +3,7 @@ import { assign } from "../../functions/assign.js";
 import { checkearEstadoEnvio } from "../../functions/checkarEstadoEnvio.js";
 import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentStateMicroService.js";
 import { updateLastShipmentState } from "../../functions/updateLastShipmentState.js";
+import { informe } from "../../functions/informe.js";
 
 /// Esta funcion checkea si el envio ya fue colectado, entregado o cancelado
 /// Busca el chofer asignado al envio
@@ -38,7 +39,7 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
         /// Actualizamos el estado del envio en la base de datos
         await updateLastShipmentState(dbConnection, shipmentId);
 
-        const body = await informe(dbConnection, userId);
+        const body = await informe(dbConnection, companyId, client, userId, shipmentId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
         console.error("Error en handleInternoNoFlex:", error);

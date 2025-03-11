@@ -7,6 +7,7 @@ import { insertEnvios } from "../../functions/insertEnvios.js";
 import { insertEnviosExteriores } from "../../functions/insertEnviosExteriores.js";
 import { checkearEstadoEnvio } from "../../functions/checkarEstadoEnvio.js";
 import { checkIfExistLogisticAsDriverInExternalCompany } from "../../functions/checkIfExistLogisticAsDriverInExternalCompany.js";
+import { informe } from "../../functions/informe.js";
 
 /// Esta funcion se conecta a la base de datos de la empresa externa
 /// Checkea si el envio ya fue colectado, entregado o cancelado
@@ -35,7 +36,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
             return check;
         }
 
-        const companyClientList = await getClientsByCompany(externalDbConnection, externalCompany);
+        const companyClientList = await getClientsByCompany(externalDbConnection, externalCompany.did);
         const client = companyClientList[dataQr.cliente];
 
         const internalCompany = await getCompanyById(companyId);
@@ -94,7 +95,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         externalDbConnection.end();
 
-        const body = await informe(dbConnection, userId);
+        const body = await informe(dbConnection, companyId, client, userId, didinterno);
         return { estadoRespuesta: true, mensaje: "Paquete colectado con exito", body: body };
     } catch (error) {
         console.error("Error en handleExternalNoFlex:", error);

@@ -196,19 +196,19 @@ async function loadClients(dbConnection, companyId) {
     } catch (error) {
         console.error(`Error en getClients para la compañía ${companyId}:`, error);
         throw error;
-    } 
+    }
 }
 
 
-export async function getClientsByCompany(dbConnection, company) {
+export async function getClientsByCompany(dbConnection, companyId) {
     try {
-        let companyClients = clientList[company.did];
+        let companyClients = clientList[companyId];
 
         if (companyClients == undefined || Object.keys(clientList).length === 0) {
             try {
-                await loadClients(dbConnection, company.did);
+                await loadClients(dbConnection, companyId);
 
-                companyClients = clientList[company.did];
+                companyClients = clientList[companyId];
             } catch (error) {
                 console.error("Error al cargar compañías desde Redis:", error);
                 throw companyClients;

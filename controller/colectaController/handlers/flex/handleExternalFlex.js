@@ -127,7 +127,7 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
 
         externalDbConnection.end();
 
-        const body = await informe(dbConnection, userId);
+        const body = await informe(dbConnection, companyId, client, userId, internalShipmentId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body };
 
     }
