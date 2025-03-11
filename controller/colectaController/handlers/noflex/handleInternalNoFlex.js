@@ -38,7 +38,7 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
         /// Actualizamos el estado del envio en la base de datos
         await updateLastShipmentState(dbConnection, shipmentId);
 
-        const body = informe(dbConnection, userId);
+        const body = await informe(dbConnection, userId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
         console.error("Error en handleInternoNoFlex:", error);

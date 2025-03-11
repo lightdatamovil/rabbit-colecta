@@ -44,14 +44,6 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
         const externalDbConnection = mysql.createConnection(dbConfigExt);
         externalDbConnection.connect();
 
-        /// Chequeo si el envío ya fue colectado cancelado o entregado
-        const check = await checkearEstadoEnvio(externalDbConnection, shipmentId);
-        if (check) {
-            externalDbConnection.end();
-
-            return check;
-        };
-
         /// Busco el envío
         const sqlEnvios = `
                         SELECT did
@@ -93,6 +85,14 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
             externalShipmentId = rowsEnvios[0].did;
         }
 
+        /// Chequeo si el envío ya fue colectado cancelado o entregado
+        const check = await checkearEstadoEnvio(externalDbConnection, externalShipmentId);
+        if (check) {
+            externalDbConnection.end();
+
+            return check;
+        };
+
         /// Busco si el chofer está asignado
         const driver = await checkIfExistLogisticAsDriverInExternalCompany(externalDbConnection, syncCode);
         if (!driver) {
@@ -127,7 +127,7 @@ export async function handleExternalFlex(dbConnection, companyId, userId, profil
 
         externalDbConnection.end();
 
-        const body = informe(dbConnection, userId);
+        const body = await informe(dbConnection, userId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body };
 
     }
