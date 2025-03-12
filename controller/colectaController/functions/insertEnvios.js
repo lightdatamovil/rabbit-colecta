@@ -1,5 +1,6 @@
 import { executeQuery } from '../../../db.js';
 import axios from "axios";
+import { logRed } from '../../../src/funciones/logsCustom.js';
 
 export async function insertEnvios(dbConnection, companyId, clientId, accountId, dataQr, flex, externo, driverId) {
     const lote = Math.random().toString(36).substring(2, 15);
@@ -56,7 +57,7 @@ export async function insertEnvios(dbConnection, companyId, clientId, accountId,
 
         return result.insertId;
     } catch (error) {
-        console.error('❌ Error en insertarPaquete:', error);
+        logRed('Error en insertarPaquete:', error);
         throw error;
     }
 }

@@ -47,21 +47,20 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         /// Busco el envío
         const sqlEnvios = `
-                        SELECT did,didCliente
+                        SELECT did, didCliente
                         FROM envios 
                         WHERE ml_shipment_id = ? AND ml_vendedor_id = ? 
                         LIMIT 1
                     `;
         let rowsEnvios = await executeQuery(externalDbConnection, sqlEnvios, [shipmentId, senderid]);
-        console.log(rowsEnvios, "row");
 
         let externalShipmentId;
-        let clienteExt;
+        let externalClientId;
 
         /// Si existe el envío, tomo el did
         if (rowsEnvios.length > 0) {
             externalShipmentId = rowsEnvios[0].did;
-            clienteExt = rowsEnvios[0].didCliente;
+            externalClientId = rowsEnvios[0].didCliente;
 
             /// Si no existe, lo inserto y tomo el did
         } else {
@@ -79,7 +78,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
                 return { estadoRespuesta: false, mensaje: "No se encontró cuenta asociada" };
             }
 
-            const didcliente_ext = rowsCuentas[0].didCliente;
+            externalClientId = rowsCuentas[0].didCliente;
             const didcuenta_ext = rowsCuentas[0].did;
 
             const result = await insertEnvios(externalDbConnection, externalCompanyId, didcliente_ext, didcuenta_ext, dataQr, 1, 0);
@@ -87,7 +86,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
             rowsEnvios = await executeQuery(externalDbConnection, sqlEnvios, [result, senderid]);
 
             externalShipmentId = rowsEnvios[0].did;
-
         }
 
         /// Chequeo si el envío ya fue colectado cancelado o entregado
@@ -100,9 +98,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         /// Busco si el chofer está asignado
         const driver = await checkIfExistLogisticAsDriverInExternalCompany(externalDbConnection, codLocal);
-        console.log(driver, "aaa");
-        console.log(syncCode, "codigo");
-
 
         if (!driver) {
             externalDbConnection.end();
@@ -120,7 +115,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         /// Actualizo el estado del envío y lo envío al microservicio de estados en la logística externa
         await updateLastShipmentState(externalDbConnection, externalShipmentId);
-        await sendToShipmentStateMicroService(externalCompanyId, clienteExt, externalShipmentId);
+        await sendToShipmentStateMicroService(externalCompanyId, externalClientId, externalShipmentId);
 
         if (autoAssign) {
             const dqr = {
@@ -136,7 +131,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         externalDbConnection.end();
 
-        const body = await informe(dbConnection, clienteExt, userId, internalShipmentId);
+        const body = await informe(dbConnection, externalClientId, userId, internalShipmentId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body };
 
     }

@@ -1,4 +1,5 @@
 import { executeQuery } from "../../../db.js";
+import { logRed } from "../../../src/funciones/logsCustom.js";
 import { checkearEstadoEnvio } from "./checkarEstadoEnvio.js";
 
 export async function updateLastShipmentState(dbConnection, did) {
@@ -40,7 +41,7 @@ export async function updateLastShipmentState(dbConnection, did) {
         `;
         await executeQuery(dbConnection, sqlInsertHistorial, [did, estado, quien, fechaT, didCadete]);
     } catch (error) {
-        console.error("Error en updateLastShipmentState:", error);
+        logRed("Error en updateLastShipmentState:", error);
         throw error;
     }
 }

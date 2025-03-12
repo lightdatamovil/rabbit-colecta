@@ -1,8 +1,9 @@
 import { executeQuery } from '../../../db.js'; // Asegúrate de importar correctamente executeQuery
+import { logRed } from '../../../src/funciones/logsCustom.js';
 
-export async function informe(dbConnection,clientId, userId, shipmentId) {
+export async function informe(dbConnection, clientId, userId, shipmentId) {
     try {
-        let clientename = "";
+        let clientename = "Sin información";
         let hoy = new Date().toISOString().split('T')[0];
         let ayer = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -12,7 +13,7 @@ export async function informe(dbConnection,clientId, userId, shipmentId) {
         if (result.length > 0) {
             clientename = result[0].nombre_fantasia;
         }
-        
+
         // Ingresados hoy
         sql = `SELECT COUNT(id) as total FROM envios 
                WHERE superado=0 AND elim=0 
@@ -20,7 +21,7 @@ export async function informe(dbConnection,clientId, userId, shipmentId) {
                AND didCliente = ?`;
         result = await executeQuery(dbConnection, sql, [`${hoy} 00:00:00`, `${hoy} 23:59:59`, clientId]);
         let ingresadoshoy = result.length > 0 ? result[0].total : 0;
-        
+
         // Total a colectar del cliente
         sql = `SELECT COUNT(e.id) as total FROM envios e
                JOIN envios_historial eh ON eh.elim=0 AND eh.superado=0 AND eh.estado=7 AND eh.didEnvio = e.did 
@@ -28,10 +29,10 @@ export async function informe(dbConnection,clientId, userId, shipmentId) {
         result = await executeQuery(dbConnection, sql, [clientId, `${ayer} 00:00:00`]);
         let cliente_total = result.length > 0 ? result[0].total : 0;
         let aingresarhoy = cliente_total;
-        
+
         let choferasignado = "";
         let zonaentrega = "";
-        
+
         // Datos del paquete
         if (shipmentId > 0) {
             sql = `SELECT ez.nombre as zona, CONCAT(su.nombre, ' ', su.apellido) as chofer
@@ -46,7 +47,7 @@ export async function informe(dbConnection,clientId, userId, shipmentId) {
                 zonaentrega = result[0].zona || "";
             }
         }
-        
+
         // Retirados hoy por mí
         sql = `SELECT COUNT(id) as total FROM envios_historial 
                WHERE superado=0 AND elim=0 AND quien IN (?) 
@@ -66,7 +67,7 @@ export async function informe(dbConnection,clientId, userId, shipmentId) {
             zonaentrega
         };
     } catch (error) {
-        console.error("Error en obtenerTotales:", error);
+        logRed("Error en obtenerTotales:", error);
         throw error;
     }
 }

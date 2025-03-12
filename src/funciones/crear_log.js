@@ -1,3 +1,5 @@
+import { logRed } from "./logsCustom";
+
 export async function crearLog(idEmpresa, operador, endpoint, result, quien, idDispositivo, modelo, marca, versionAndroid, versionApp, conInterno) {
     try {
         const fechaunix = Date.now();
@@ -7,7 +9,7 @@ export async function crearLog(idEmpresa, operador, endpoint, result, quien, idD
 
         await conInterno.execute(sqlLog, values);
     } catch (error) {
-        console.error("Error al crear log:", error);
+        logRed("Error al crear log:", error);
         throw error;
     }
 }

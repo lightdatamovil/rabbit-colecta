@@ -1,6 +1,7 @@
 import redis from 'redis';
 import dotenv from 'dotenv';
 import mysql from 'mysql';
+import { logRed } from './src/funciones/logsCustom.js';
 
 dotenv.config({ path: process.env.ENV_FILE || ".env" });
 
@@ -17,7 +18,7 @@ export const redisClient = redis.createClient({
 });
 
 redisClient.on('error', (err) => {
-    console.error('Error al conectar con Redis:', err);
+    logRed('Error al conectar con Redis:', err);
 });
 
 export async function updateRedis(empresaId, envioId, choferId) {
@@ -60,7 +61,7 @@ async function loadCompaniesFromRedis() {
         companiesList = JSON.parse(companiesListString);
 
     } catch (error) {
-        console.error("Error en loadCompaniesFromRedis:", error);
+        logRed("Error en loadCompaniesFromRedis:", error);
         throw error;
     }
 }
@@ -75,14 +76,14 @@ export async function getCompanyById(companyId) {
 
                 company = companiesList[companyId];
             } catch (error) {
-                console.error("Error al cargar compañías desde Redis:", error);
+                logRed("Error al cargar compañías desde Redis:", error);
                 throw error;
             }
         }
 
         return company;
     } catch (error) {
-        console.error("Error en getCompanyById:", error);
+        logRed("Error en getCompanyById:", error);
         throw error;
     }
 }
@@ -95,7 +96,7 @@ export async function getCompanyByCode(companyCode) {
             try {
                 await loadCompaniesFromRedis();
             } catch (error) {
-                console.error("Error al cargar compañías desde Redis:", error);
+                logRed("Error al cargar compañías desde Redis:", error);
                 throw error;
             }
         }
@@ -112,7 +113,7 @@ export async function getCompanyByCode(companyCode) {
 
         return company;
     } catch (error) {
-        console.error("Error en getCompanyByCode:", error);
+        logRed("Error en getCompanyByCode:", error);
         throw error;
     }
 }
@@ -146,7 +147,7 @@ async function loadAccountList(dbConnection, companyId, senderId) {
 
         return accountList[companyId] ? accountList[companyId][senderId] : null;
     } catch (error) {
-        console.error("Error en obtenerMisCuentas:", error);
+        logRed("Error en obtenerMisCuentas:", error);
         throw error;
     }
 }
@@ -161,7 +162,7 @@ export async function getAccountBySenderId(dbConnection, companyId, senderId) {
 
         return account;
     } catch (error) {
-        console.error("Error en getAccountBySenderId:", error);
+        logRed("Error en getAccountBySenderId:", error);
         throw error;
     }
 }
@@ -194,7 +195,7 @@ async function loadClients(dbConnection, companyId) {
 
         return clientList[companyId];
     } catch (error) {
-        console.error(`Error en getClients para la compañía ${companyId}:`, error);
+        logRed(`Error en getClients para la compañía ${companyId}:`, error);
         throw error;
     }
 }
@@ -210,21 +211,19 @@ export async function getClientsByCompany(dbConnection, companyId) {
 
                 companyClients = clientList[companyId];
             } catch (error) {
-                console.error("Error al cargar compañías desde Redis:", error);
+                logRed("Error al cargar compañías desde Redis:", error);
                 throw companyClients;
             }
         }
 
         return companyClients;
     } catch (error) {
-        console.error("Error en getZonesByCompany:", error);
+        logRed("Error en getZonesByCompany:", error);
         throw error;
     }
 }
 
 export async function executeQuery(connection, query, values) {
-    // console.log("Query:", query);
-    // console.log("Values:", values);
     try {
         return new Promise((resolve, reject) => {
             connection.query(query, values, (err, results) => {
@@ -236,7 +235,7 @@ export async function executeQuery(connection, query, values) {
             });
         });
     } catch (error) {
-        console.error("Error al ejecutar la query:", error);
+        logRed("Error al ejecutar la query:", error);
         throw error;
     }
 }

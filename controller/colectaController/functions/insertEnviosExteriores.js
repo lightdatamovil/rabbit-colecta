@@ -1,4 +1,5 @@
 import { executeQuery } from "../../../db.js";
+import { logRed } from "../../../src/funciones/logsCustom.js";
 
 export async function insertEnviosExteriores(dbConnection, internoShipmentId, externalShipmentId, flex, externalName, externalCompanyId) {
     try {
@@ -21,7 +22,7 @@ export async function insertEnviosExteriores(dbConnection, internoShipmentId, ex
 
         return result.insertId;
     } catch (error) {
-        console.error("Error en insertEnviosExteriores:", error);
+        logRed("Error en insertEnviosExteriores:", error);
         throw error;
     }
 }

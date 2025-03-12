@@ -4,6 +4,7 @@ import { handleExternalFlex } from "./colectaController/handlers/flex/handleExte
 import { handleExternalNoFlex } from "./colectaController/handlers/noflex/handleExternalNoFlex.js";
 import { handleInternalNoFlex } from "./colectaController/handlers/noflex/handleInternalNoFlex.js";
 import mysql from "mysql";
+import { logRed } from "../src/funciones/logsCustom.js";
 
 export async function colectar(company, dataQr, userId, profile, autoAssign) {
     const dbConfig = getProdDbConfig(company);
@@ -44,7 +45,7 @@ export async function colectar(company, dataQr, userId, profile, autoAssign) {
 
         return response;
     } catch (error) {
-        console.error("Error en colectar:", error);
+        logRed("Error en colectar:", error);
         throw error;
     } finally {
         dbConnection.end();

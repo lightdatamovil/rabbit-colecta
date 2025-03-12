@@ -51,14 +51,14 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
 
     /// Actualizo el estado del envío y lo envío al microservicio de estados
     await updateLastShipmentState(dbConnection, shipmentId);
-    await sendToShipmentStateMicroService(companyId,userId, shipmentId);
+    await sendToShipmentStateMicroService(companyId, userId, shipmentId);
 
     /// Asigno el envío al usuario si es necesario
     if (autoAssign) {
         await assign(companyId, userId, profile, dataQr, userId);
     }
 
-    const body = await informe(dbConnection, dataQr.cliente, userId, shipmentId);
+    const body = await informe(dbConnection, account.didCliente, userId, shipmentId);
     return { estadoRespuesta: true, mensaje: "Paquete insertado y colectado - FLEX", body: body };
 
 }

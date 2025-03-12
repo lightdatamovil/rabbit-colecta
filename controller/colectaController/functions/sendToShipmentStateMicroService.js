@@ -1,5 +1,6 @@
 import { connect } from 'amqplib';
 import dotenv from 'dotenv';
+import { logRed } from '../../../src/funciones/logsCustom.js';
 
 dotenv.config({ path: process.env.ENV_FILE || '.env' });
 
@@ -26,7 +27,7 @@ export async function sendToShipmentStateMicroService(companyId, userId, shipmen
 
         connection.close();
     } catch (error) {
-        console.error("❌ Error enviando mensaje a RabbitMQ:", error);
+        logRed("Error enviando mensaje a RabbitMQ:", error);
         throw error;
     }
 };
