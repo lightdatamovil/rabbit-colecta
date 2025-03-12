@@ -3,7 +3,7 @@ import { logRed } from '../../../src/funciones/logsCustom.js';
 
 export async function informe(dbConnection, clientId, userId, shipmentId) {
     try {
-        let clientename = "Sin información";
+        let cliente = "Sin información";
         let hoy = new Date().toISOString().split('T')[0];
         let ayer = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -11,7 +11,7 @@ export async function informe(dbConnection, clientId, userId, shipmentId) {
         let sql = "SELECT nombre_fantasia FROM clientes WHERE superado=0 AND elim=0 AND did = ?";
         let result = await executeQuery(dbConnection, sql, [clientId]);
         if (result.length > 0) {
-            clientename = result[0].nombre_fantasia;
+            cliente = result[0].nombre_fantasia;
         }
 
         // Ingresados hoy
@@ -20,7 +20,7 @@ export async function informe(dbConnection, clientId, userId, shipmentId) {
                AND autofecha BETWEEN ? AND ? 
                AND didCliente = ?`;
         result = await executeQuery(dbConnection, sql, [`${hoy} 00:00:00`, `${hoy} 23:59:59`, clientId]);
-        let ingresadoshoy = result.length > 0 ? result[0].total : 0;
+        let retiradoshoy = result.length > 0 ? result[0].total : 0;
 
         // Total a colectar del cliente
         sql = `SELECT COUNT(e.id) as total FROM envios e
@@ -28,7 +28,7 @@ export async function informe(dbConnection, clientId, userId, shipmentId) {
                WHERE e.superado=0 AND e.elim=0 AND e.didCliente = ? AND eh.fecha > ?`;
         result = await executeQuery(dbConnection, sql, [clientId, `${ayer} 00:00:00`]);
         let cliente_total = result.length > 0 ? result[0].total : 0;
-        let aingresarhoy = cliente_total;
+        let aretirarHoy = cliente_total;
 
         let choferasignado = "";
         let zonaentrega = "";
@@ -56,15 +56,14 @@ export async function informe(dbConnection, clientId, userId, shipmentId) {
         let retiradoshoymi = result.length > 0 ? result[0].total : 0;
 
         return {
-            cliente: clientename,
-            ingresados: 0,
+            cliente,
             cliente_total,
+            aretirarHoy,
+            retiradoshoy,
             retiradoshoymi,
-            aingresarhoy,
-            ingresadoshoy,
-            ingresadosahora: 0,
+            retiradosahora: 0,
             choferasignado,
-            zonaentrega
+            ingresados: 0,
         };
     } catch (error) {
         logRed("Error en obtenerTotales:", error);
