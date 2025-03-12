@@ -21,6 +21,6 @@ export function logBlue(message) {
 }
 export function logYellow(message) {
     if (isLocal) {
-        console.log(`\x1b[33m%s\x1b[0m`, `⚠️ ${message}`);
+        console.log(`\x1b[33m%s\x1b[0m`, `⚠️  ${message}`);
     }
 }

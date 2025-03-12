@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import { colectar } from './controller/colectaController.js';
 import { verifyParameters } from './src/funciones/verifyParameters.js';
 import { getCompanyById, redisClient } from './db.js';
-import { logBlue, logGreen, logRed } from './src/funciones/logsCustom.js';
+import { logBlue, logGreen, logRed, logYellow } from './src/funciones/logsCustom.js';
 
 dotenv.config({ path: process.env.ENV_FILE || '.env' });
 
@@ -28,7 +28,7 @@ async function startConsumer() {
                 const body = JSON.parse(msg.content.toString());
                 try {
                     logGreen(`Mensaje recibido: ${JSON.stringify(body, null, 2)}`);
-
+                    logYellow("test");
                     const errorMessage = verifyParameters(body, ['dataQr', 'autoAssign', 'channel']);
 
                     if (errorMessage) {
@@ -44,9 +44,9 @@ async function startConsumer() {
 
                     channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), { persistent: true });
 
-                    console.timeEnd("Tiempo de ejecución");
-
                     logGreen(`Mensaje enviado al canal ${body.channel}: ${JSON.stringify(result)}`);
+
+                    console.timeEnd("Tiempo de ejecución");
                 } catch (error) {
                     logRed("Error al procesar el mensaje: ", error);
 
@@ -59,6 +59,7 @@ async function startConsumer() {
                     if (a) {
                         logGreen(`Mensaje enviado al canal ${body.channel}: ${JSON.stringify(result)}`);
                     }
+
                     console.timeEnd("Tiempo de ejecución");
                 } finally {
                     channel.ack(msg);
