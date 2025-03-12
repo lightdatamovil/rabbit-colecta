@@ -1,7 +1,6 @@
 import os from "os";
 
-const isLocal = ["localhost", "127.0.0.1"].includes(os.hostname());
-console.log(`asdasdasdasdsadasa ${os.hostname()}`);
+const isLocal = os.hostname() != "asignaciones";
 
 export function logGreen(message) {
     if (isLocal) {
