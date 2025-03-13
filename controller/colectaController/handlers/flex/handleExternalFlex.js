@@ -89,7 +89,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
             const result = await insertEnvios(externalDbConnection, externalCompanyId, didcliente_ext, didcuenta_ext, dataQr, 1, 0);
 
             rowsEnvios = await executeQuery(externalDbConnection, sqlEnvios, [result, senderid]);
-
             logCyan("Inserte el envio en la logistica externa");
 
             externalShipmentId = rowsEnvios[0].did;
@@ -112,7 +111,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
             return { estadoRespuesta: false, mensaje: "No se encontró chofer asignado" };
         }
-
         logCyan("Encontre la logistica como chofer en la logistica externa");
 
         let internalShipmentId;

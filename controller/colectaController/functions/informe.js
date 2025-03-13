@@ -68,7 +68,6 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
             logCyan("El chofer fue encontrado");
         }
 
-
         logCyan("Se generó el informe");
         return {
             cliente: companyClients[clientId].nombre || 'Sin informacion',
