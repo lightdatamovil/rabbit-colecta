@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import { colectar } from './controller/colectaController.js';
 import { verifyParameters } from './src/funciones/verifyParameters.js';
 import { getCompanyById, redisClient } from './db.js';
-import { logBlue, logGreen, logRed, logYellow } from './src/funciones/logsCustom.js';
+import { logBlue, logGreen, logPurple, logRed, logYellow } from './src/funciones/logsCustom.js';
 
 dotenv.config({ path: process.env.ENV_FILE || '.env' });
 
@@ -23,19 +23,20 @@ async function startConsumer() {
         logBlue("Esperando mensajes en la cola ", QUEUE_NAME_COLECTA);
 
         channel.consume(QUEUE_NAME_COLECTA, async (msg) => {
-            console.time("Tiempo de ejecución");
+            const startTime = performance.now();
             if (msg !== null) {
                 const body = JSON.parse(msg.content.toString());
                 try {
                     logGreen(`Mensaje recibido: ${JSON.stringify(body, null, 2)}`);
-                    logYellow("test");
+
                     const errorMessage = verifyParameters(body, ['dataQr', 'autoAssign', 'channel']);
 
                     if (errorMessage) {
-                        logRed("Error al verificar los parámetros: ", errorMessage);
+                        logRed(`Error en los parametros: ${errorMessage}`);
 
                         throw new Error(errorMessage);
                     }
+
                     const company = await getCompanyById(body.companyId);
 
                     const result = await colectar(company, body.dataQr, body.userId, body.profile, body.autoAssign);
@@ -46,9 +47,10 @@ async function startConsumer() {
 
                     logGreen(`Mensaje enviado al canal ${body.channel}: ${JSON.stringify(result)}`);
 
-                    console.timeEnd("Tiempo de ejecución");
+                    const endTime = performance.now();
+                    logPurple(`Tiempo de ejecución: ${endTime - startTime} ms`);
                 } catch (error) {
-                    logRed("Error al procesar el mensaje: ", error);
+                    logRed(`Error al procesar el mensaje: ${error.message}`);
 
                     let a = channel.sendToQueue(
                         body.channel,
@@ -57,17 +59,18 @@ async function startConsumer() {
                     );
 
                     if (a) {
-                        logGreen(`Mensaje enviado al canal ${body.channel}: ${JSON.stringify(result)}`);
+                        logGreen(`Mensaje enviado al canal ${body.channel}: ${JSON.stringify(a)}`);
                     }
 
-                    console.timeEnd("Tiempo de ejecución");
+                    const endTime = performance.now();
+                    logPurple(`Tiempo de ejecución: ${endTime - startTime} ms`);
                 } finally {
                     channel.ack(msg);
                 }
             }
         });
     } catch (error) {
-        logRed("Error al conectar con RabbitMQ: ", error);
+        logRed(`Error al conectar con RabbitMQ: ${error.message}`);
     }
 }
 

@@ -26,7 +26,7 @@ export async function assign(companyId, userId, profile, dataQr, driverId) {
             throw new Error("Error al asignar");
         }
     } catch (error) {
-        logRed('Error al asignar', error);
+        logRed(`Error al asignar: ${error.message}`);
         throw error;
     }
 }

@@ -40,10 +40,10 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
         /// Actualizamos el estado del envio en la base de datos
         await updateLastShipmentState(dbConnection, shipmentId);
 
-        const body = await informe(dbConnection, dataQr.cliente, userId, shipmentId);
+        const body = await informe(dbConnection, companyId, dataQr.cliente, userId, shipmentId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
-        logRed("Error en handleInternoNoFlex:", error);
+        logRed(`Error en handleInternalNoFlex: ${error.message}`);
         throw error;
     }
 }

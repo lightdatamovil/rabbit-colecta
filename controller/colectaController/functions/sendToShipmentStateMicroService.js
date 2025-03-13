@@ -27,7 +27,7 @@ export async function sendToShipmentStateMicroService(companyId, userId, shipmen
 
         connection.close();
     } catch (error) {
-        logRed("Error enviando mensaje a RabbitMQ:", error);
+        logRed(`Error en sendToShipmentStateMicroService: ${error.message}`);
         throw error;
     }
 };
