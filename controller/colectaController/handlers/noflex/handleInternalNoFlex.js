@@ -4,7 +4,7 @@ import { checkearEstadoEnvio } from "../../functions/checkarEstadoEnvio.js";
 import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentStateMicroService.js";
 import { updateLastShipmentState } from "../../functions/updateLastShipmentState.js";
 import { informe } from "../../functions/informe.js";
-import { logRed } from "../../../../src/funciones/logsCustom.js";
+import { logCyan, logRed } from "../../../../src/funciones/logsCustom.js";
 
 /// Esta funcion checkea si el envio ya fue colectado, entregado o cancelado
 /// Busca el chofer asignado al envio
@@ -16,7 +16,9 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
         const shipmentId = dataQr.did;
 
         /// Chequeo si el envio ya fue colectado, entregado o cancelado
-        await checkearEstadoEnvio(dbConnection, shipmentId);
+        const check = await checkearEstadoEnvio(dbConnection, shipmentId);
+        if (check) return check;
+        logCyan("El envio no fue colectado, entregado o cancelado");
 
         /// Busco el estado del envio y el chofer asignado
         const querySelectEnvios = `SELECT choferAsignado FROM envios WHERE superado = 0 AND elim = 0 AND did = ? LIMIT 1`;
@@ -26,21 +28,27 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
         if (resultChoferAsignado.length === 0) {
             return { estadoRespuesta: false, mensaje: "Paquete no encontrado" };
         }
+        logCyan("Se encontro el chofer asignado");
 
         const isAlreadyAssigned = resultChoferAsignado[0].choferAsignado == userId;
-
         /// Si el envio no esta asignado y se quiere autoasignar, lo asigno
         if (!isAlreadyAssigned && autoAssign) {
             await assign(companyId, userId, profile, dataQr, userId);
+            logCyan("Se asigno el envio");
         }
 
         /// Actualizamos el estado del envio en el micro servicio
         await sendToShipmentStateMicroService(companyId, userId, shipmentId, 0, null, null);
+        logCyan("Se actualizo el estado del envio en el micro servicio");
 
         /// Actualizamos el estado del envio en la base de datos
         await updateLastShipmentState(dbConnection, shipmentId);
+        logCyan("Se actualizo el estado del envio en la base de datos");
 
         const body = await informe(dbConnection, companyId, dataQr.cliente, userId, shipmentId);
+
+        logCyan("Informe generado");
+
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
         logRed(`Error en handleInternalNoFlex: ${error.message}`);

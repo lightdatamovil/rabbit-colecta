@@ -8,7 +8,8 @@ export async function updateLastShipmentState(dbConnection, did) {
         const estado = 0;
         const quien = 0;
 
-        await checkearEstadoEnvio(dbConnection, did);
+        const check = await checkearEstadoEnvio(dbConnection, did);
+        if (check) return check;
 
         const sqlSuperado = `
             UPDATE envios_historial 

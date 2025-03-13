@@ -32,6 +32,9 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
     if (resultBuscarEnvio.length === 0) {
         shipmentId = await insertEnvios(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0);
         resultBuscarEnvio = await executeQuery(dbConnection, sql, [mlShipmentId, senderId]);
+        logCyan("Inserte el envio");
+    } else {
+        logCyan("Encontre el envio");
     }
     const row = resultBuscarEnvio[0];
 
@@ -40,6 +43,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
     /// Checkeo si el envío ya fue colectado cancelado o entregado
     const check = await checkearEstadoEnvio(dbConnection, shipmentId);
     if (check) return check;
+    logCyan("El envio no fue colectado cancelado o entregado");
 
     const queryUpdateEnvios = `
                 UPDATE envios 
@@ -49,16 +53,20 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
             `;
 
     await executeQuery(dbConnection, queryUpdateEnvios, [JSON.stringify(dataQr), shipmentId]);
+    logCyan("Actualice el ml_qr_seguridad del envio");
 
     /// Actualizo el estado del envío y lo envío al microservicio de estados
     await updateLastShipmentState(dbConnection, shipmentId);
     await sendToShipmentStateMicroService(companyId, userId, shipmentId);
+    logCyan("Actualice el estado del envio y lo envie al microservicio de estados");
 
     /// Asigno el envío al usuario si es necesario
     if (autoAssign) {
         await assign(companyId, userId, profile, dataQr, userId);
+        logCyan("Asigne el envio");
     }
 
+    logCyan("Genero el informe");
     const body = await informe(dbConnection, companyId, account.didCliente, userId, shipmentId);
     return { estadoRespuesta: true, mensaje: "Paquete insertado y colectado - FLEX", body: body };
 
