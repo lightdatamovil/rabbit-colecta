@@ -21,26 +21,6 @@ redisClient.on('error', (err) => {
     logRed(`Error al conectar con Redis: ${error.message}`);
 });
 
-export async function updateRedis(empresaId, envioId, choferId) {
-    const DWRTE = await redisClient.get('DWRTE',);
-    const empresaKey = `e.${empresaId}`;
-    const envioKey = `en.${envioId}`;
-
-    // Si la empresa no existe, la creamos
-    if (!DWRTE[empresaKey]) {
-        DWRTE[empresaKey] = {};
-    }
-
-    // Solo agrega si el envío no existe
-    if (!DWRTE[empresaKey][envioKey]) {
-        DWRTE[empresaKey][envioKey] = {
-            choferId: choferId
-        };
-    }
-
-    await redisClient.set('DWRTE', JSON.stringify(DWRTE));
-}
-
 let companiesList = {};
 let clientList = {};
 let accountList = {};

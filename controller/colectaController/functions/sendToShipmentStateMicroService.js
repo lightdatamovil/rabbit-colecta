@@ -1,6 +1,6 @@
 import { connect } from 'amqplib';
 import dotenv from 'dotenv';
-import { logRed } from '../../../src/funciones/logsCustom.js';
+import { logRed, logYellow } from '../../../src/funciones/logsCustom.js';
 
 dotenv.config({ path: process.env.ENV_FILE || '.env' });
 
@@ -23,9 +23,14 @@ export async function sendToShipmentStateMicroService(companyId, userId, shipmen
             userId
         };
 
-        channel.sendToQueue(QUEUE_ESTADOS, Buffer.from(JSON.stringify(message)), { persistent: true });
-
-        connection.close();
+        channel.sendToQueue(QUEUE_ESTADOS, Buffer.from(JSON.stringify(message)), { persistent: true }, (err, ok) => {
+            if (err) {
+                logRed('❌ Error al enviar el mensaje:', err);
+            } else {
+                logYellow('✅ Mensaje enviado correctamente y confirmado por RabbitMQ.');
+            }
+            connection.close();
+        });
     } catch (error) {
         logRed(`Error en sendToShipmentStateMicroService: ${error.message}`);
         throw error;
