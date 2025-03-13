@@ -59,7 +59,7 @@ async function startConsumer() {
                     );
 
                     if (a) {
-                        logGreen(`Mensaje enviado al canal ${body.channel}: ${JSON.stringify(a)}`);
+                        logGreen(`Mensaje enviado al canal ${body.channel}: ${error.message}`);
                     }
 
                     const endTime = performance.now();

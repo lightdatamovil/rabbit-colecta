@@ -62,7 +62,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
         if (rowsEnvios.length > 0) {
             externalShipmentId = rowsEnvios[0].did;
             externalClientId = rowsEnvios[0].didCliente;
-            logYellow(`1`);
             /// Si no existe, lo inserto y tomo el did
         } else {
             /// Tomo los datos del cliente de la logística externa
@@ -79,7 +78,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
                 return { estadoRespuesta: false, mensaje: "No se encontró cuenta asociada" };
             }
 
-            logYellow(`2`);
             externalClientId = rowsCuentas[0].didCliente;
             const didcuenta_ext = rowsCuentas[0].did;
 
@@ -106,9 +104,18 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
             return { estadoRespuesta: false, mensaje: "No se encontró chofer asignado" };
         }
+        let internalShipmentId;
 
-        /// Inserto en envios y en envios exteriores de la logistica interna
-        const internalShipmentId = await insertEnvios(dbConnection, company.did, externalLogisticId, 0, dataQr, 1, 1,);
+        const consulta = 'SELECT didLocal FROM envios_exteriores WHERE didExterno = ?';
+        internalShipmentId = await executeQuery(dbConnection, consulta, [externalShipmentId]);
+
+        if (internalShipmentId.length > 0 && internalShipmentId[0]?.didLocal) {
+            internalShipmentId = internalShipmentId[0].didLocal;
+        } else {
+            /// Inserto en envios y en envios exteriores de la logistica interna
+            internalShipmentId = await insertEnvios(dbConnection, company.did, externalLogisticId, 0, dataQr, 1, 1,);
+        }
+
         await insertEnviosExteriores(dbConnection, externalShipmentId, internalShipmentId, 1, nombreFantasia, externalCompanyId);
 
         /// Actualizo el estado del envío y lo envío al microservicio de estados en la logística interna
@@ -133,7 +140,15 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         externalDbConnection.end();
 
-        const body = await informe(dbConnection, company.did, externalClientId, userId, internalShipmentId);
+        const queryInternalClient = `
+            SELECT didCliente 
+            FROM envios 
+            WHERE did = ?
+        `;
+
+        const internalClient = await executeQuery(dbConnection, queryInternalClient, [internalShipmentId]);
+
+        const body = await informe(dbConnection, company.did, internalClient[0].didCliente, userId, internalShipmentId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body };
 
     }

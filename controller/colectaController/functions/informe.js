@@ -53,8 +53,6 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
 
         const companyDrivers = await getDriversByCompany(dbConnection, companyId);
 
-        logYellow(`companyClients: ${JSON.stringify(companyClients)}`);
-        logYellow(`clientId: ${clientId}`);
         if (companyClients[clientId] === undefined) {
             throw new Error("Cliente no encontrado");
         }
