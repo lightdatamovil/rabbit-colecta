@@ -47,8 +47,6 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
 
         const body = await informe(dbConnection, companyId, dataQr.cliente, userId, shipmentId);
 
-        logCyan("Informe generado");
-
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
         logRed(`Error en handleInternalNoFlex: ${error.message}`);

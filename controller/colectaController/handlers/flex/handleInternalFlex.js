@@ -66,8 +66,8 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
         logCyan("Asigne el envio");
     }
 
-    logCyan("Genero el informe");
     const body = await informe(dbConnection, companyId, account.didCliente, userId, shipmentId);
+
     return { estadoRespuesta: true, mensaje: "Paquete insertado y colectado - FLEX", body: body };
 
 }

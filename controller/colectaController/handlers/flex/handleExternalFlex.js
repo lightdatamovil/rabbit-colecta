@@ -169,7 +169,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
         logCyan("Encontre el cliente interno");
 
         const body = await informe(dbConnection, company.did, internalClient[0].didCliente, userId, internalShipmentId);
-        logCyan("Genere el informe");
 
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body };
 
