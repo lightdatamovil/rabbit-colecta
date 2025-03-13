@@ -1,5 +1,5 @@
 import { executeQuery, getClientsByCompany, getDriversByCompany } from '../../../db.js'; // Asegúrate de importar correctamente executeQuery
-import { logRed, logYellow } from '../../../src/funciones/logsCustom.js';
+import { logCyan, logRed, logYellow } from '../../../src/funciones/logsCustom.js';
 
 export async function informe(dbConnection, companyId, clientId, userId, shipmentId) {
     try {
@@ -56,16 +56,20 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
         if (companyClients[clientId] === undefined) {
             throw new Error("Cliente no encontrado");
         }
+        logCyan("El cliente fue encontrado");
 
         let chofer;
 
         if (companyDrivers[choferasignado] === undefined) {
             chofer = "Sin informacion";
+            logCyan("El chofer no fue encontrado");
         } else {
             chofer = companyDrivers[choferasignado].nombre;
+            logCyan("El chofer fue encontrado");
         }
 
 
+        logCyan("Se generó el informe");
         return {
             cliente: companyClients[clientId].nombre || 'Sin informacion',
             cliente_total,
