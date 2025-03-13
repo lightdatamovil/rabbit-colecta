@@ -59,7 +59,8 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
         await assign(companyId, userId, profile, dataQr, userId);
     }
     logYellow(JSON.stringify(account));
-    const body = await informe(dbConnection, account.didCliente, userId, shipmentId);
+    logYellow(JSON.stringify(account.didCliente));
+    const body = await informe(dbConnection, companyId, account.didCliente, userId, shipmentId);
     return { estadoRespuesta: true, mensaje: "Paquete insertado y colectado - FLEX", body: body };
 
 }

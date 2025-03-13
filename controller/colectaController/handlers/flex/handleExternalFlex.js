@@ -8,6 +8,7 @@ import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentS
 import { checkearEstadoEnvio } from "../../functions/checkarEstadoEnvio.js";
 import { checkIfExistLogisticAsDriverInExternalCompany } from "../../functions/checkIfExistLogisticAsDriverInExternalCompany.js";
 import { informe } from "../../functions/informe.js"
+import { logYellow } from "../../../../src/funciones/logsCustom.js";
 
 /// Esta funcion busca las logisticas vinculadas
 /// Reviso si el envío ya fue colectado cancelado o entregado en la logística externa
@@ -61,7 +62,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
         if (rowsEnvios.length > 0) {
             externalShipmentId = rowsEnvios[0].did;
             externalClientId = rowsEnvios[0].didCliente;
-
+            logYellow(`1`);
             /// Si no existe, lo inserto y tomo el did
         } else {
             /// Tomo los datos del cliente de la logística externa
@@ -78,6 +79,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
                 return { estadoRespuesta: false, mensaje: "No se encontró cuenta asociada" };
             }
 
+            logYellow(`2`);
             externalClientId = rowsCuentas[0].didCliente;
             const didcuenta_ext = rowsCuentas[0].did;
 
@@ -131,7 +133,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         externalDbConnection.end();
 
-        const body = await informe(dbConnection, externalClientId, userId, internalShipmentId);
+        const body = await informe(dbConnection, company.did, externalClientId, userId, internalShipmentId);
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body };
 
     }

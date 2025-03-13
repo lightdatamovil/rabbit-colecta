@@ -12,7 +12,7 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
                AND autofecha BETWEEN ? AND ? 
                AND didCliente = ?`;
         const resultsql1 = await executeQuery(dbConnection, sql1, [`${hoy} 00:00:00`, `${hoy} 23:59:59`, clientId]);
-        let ingresadoshoy = resultsql1.length > 0 ? resultsql1[0].total : 0;
+        let retiradoshoy = resultsql1.length > 0 ? resultsql1[0].total : 0;
 
         // Total a colectar del cliente
         const sql2 = `SELECT COUNT(e.id) as total FROM envios e
@@ -20,7 +20,7 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
                WHERE e.superado=0 AND e.elim=0 AND e.didCliente = ? AND eh.fecha > ?`;
         const resultsql2 = await executeQuery(dbConnection, sql2, [clientId, `${ayer} 00:00:00`]);
         let cliente_total = resultsql2.length > 0 ? resultsql2[0].total : 0;
-        let aingresarhoy = cliente_total;
+        let aretirarHoy = cliente_total;
 
         let choferasignado = "";
         let zonaentrega = "";
@@ -70,16 +70,14 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
 
         return {
             cliente: companyClients[clientId].nombre || 'Sin informacion',
-            ingresados: 0,
             cliente_total,
             aretirarHoy,
             retiradoshoy,
             retiradoshoymi,
-            aingresarhoy,
-            ingresadoshoy,
-            ingresadosahora: 0,
+            // Esto no se usa en el front
             choferasignado: chofer,
-            zonaentrega
+            zonaentrega,
+            ingresados: 0,
         };
     } catch (error) {
         logRed(`Error en informe: ${error.message}`);
