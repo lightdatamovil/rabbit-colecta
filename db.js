@@ -169,8 +169,6 @@ export async function getAccountBySenderId(dbConnection, companyId, senderId) {
 }
 
 async function loadClients(dbConnection, companyId) {
-
-    // Verifica si la compañía especificada existe en la lista de compañías
     if (!clientList[companyId]) {
         clientList[companyId] = {}
     }
