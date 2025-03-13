@@ -72,6 +72,8 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
             cliente: companyClients[clientId].nombre || 'Sin informacion',
             ingresados: 0,
             cliente_total,
+            aretirarHoy,
+            retiradoshoy,
             retiradoshoymi,
             aingresarhoy,
             ingresadoshoy,
