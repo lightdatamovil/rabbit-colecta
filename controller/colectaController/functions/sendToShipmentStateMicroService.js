@@ -1,6 +1,6 @@
 import { connect } from 'amqplib';
 import dotenv from 'dotenv';
-import { logRed, logYellow } from '../../../src/funciones/logsCustom.js';
+import { logGreen, logRed, logYellow } from '../../../src/funciones/logsCustom.js';
 import { formatFechaUTC3 } from '../../../src/funciones/formatFechaUTC3.js';
 
 dotenv.config({ path: process.env.ENV_FILE || '.env' });
@@ -28,7 +28,7 @@ export async function sendToShipmentStateMicroService(companyId, userId, shipmen
             if (err) {
                 logRed('❌ Error al enviar el mensaje:', err);
             } else {
-                logYellow('✅ Mensaje enviado correctamente y confirmado por RabbitMQ.');
+                logGreen('✅ Mensaje enviado correctamente al microservicio de estados');
             }
             connection.close();
         });
