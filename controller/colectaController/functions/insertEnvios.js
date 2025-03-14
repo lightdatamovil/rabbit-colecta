@@ -18,7 +18,7 @@ export async function insertEnvios(dbConnection, companyId, clientId, accountId,
         const result = await executeQuery(
             dbConnection,
             queryInsertEnvios,
-            [0, idshipment, senderid, clientId, 1, lote, accountId, JSON.stringify(dataQr), fecha_inicio, flex, externo, fechaunix],
+            [0, idshipment, senderid, clientId, driverId, lote, accountId, JSON.stringify(dataQr), fecha_inicio, flex, externo, fechaunix],
         );
 
         const sqlInsertHistorial = `

@@ -1,7 +1,7 @@
 import redis from 'redis';
 import dotenv from 'dotenv';
 import mysql from 'mysql';
-import { logRed } from './src/funciones/logsCustom.js';
+import { logRed, logYellow } from './src/funciones/logsCustom.js';
 
 dotenv.config({ path: process.env.ENV_FILE || ".env" });
 
@@ -280,13 +280,23 @@ export async function getDriversByCompany(dbConnection, companyId) {
         throw error;
     }
 }
-export async function executeQuery(connection, query, values) {
+
+export async function executeQuery(connection, query, values, log = false) {
+    if (log) {
+        logYellow(`Ejecutando query: ${query} con valores: ${values}`);
+    }
     try {
         return new Promise((resolve, reject) => {
             connection.query(query, values, (err, results) => {
                 if (err) {
+                    if (log) {
+                        logRed(`Error en executeQuery: ${err.message}`);
+                    }
                     reject(err);
                 } else {
+                    if (log) {
+                        logYellow(`Query ejecutado con éxito: ${JSON.stringify(results)}`);
+                    }
                     resolve(results);
                 }
             });

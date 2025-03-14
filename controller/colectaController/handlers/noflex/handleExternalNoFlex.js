@@ -54,6 +54,12 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
         }
         logCyan("Se encontró la logistica como chofer en la logistica externa");
 
+        const queryClient = `
+            SELECT did 
+            FROM clientes WHERE codigoVinculacionLogE = ?
+        `;
+
+        const externalClient = await executeQuery(dbConnection, queryClient, [externalCompany.codigo], true);
         let internalShipmentId;
 
         const consulta = 'SELECT didLocal FROM envios_exteriores WHERE didExterno = ?';
@@ -67,7 +73,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
             internalShipmentId = await insertEnvios(
                 dbConnection,
                 companyId,
-                client.did,
+                externalClient[0].did,
                 0,
                 { id: "", sender_id: "" },
                 0,
@@ -112,12 +118,6 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
         await sendToShipmentStateMicroService(dataQr.empresa, driver, shipmentIdFromDataQr);
         logCyan("Actualicé el estado del envio a colectado y envié el estado del envio en los microservicios externos");
 
-        const queryClient = `
-            SELECT did 
-            FROM clientes WHERE codigoVinculacionLogE = ?
-        `;
-
-        const externalClient = await executeQuery(dbConnection, queryClient, [externalCompany.codigo]);
 
         const body = await informe(dbConnection, companyId, externalClient[0].did, userId, internalShipmentId);
 
