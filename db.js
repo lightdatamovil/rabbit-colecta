@@ -1,6 +1,5 @@
 import redis from 'redis';
 import dotenv from 'dotenv';
-import mysql from 'mysql';
 import { logRed, logYellow } from './src/funciones/logsCustom.js';
 
 dotenv.config({ path: process.env.ENV_FILE || ".env" });
