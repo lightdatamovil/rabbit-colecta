@@ -4,7 +4,7 @@ import { handleExternalFlex } from "./colectaController/handlers/flex/handleExte
 import { handleExternalNoFlex } from "./colectaController/handlers/noflex/handleExternalNoFlex.js";
 import { handleInternalNoFlex } from "./colectaController/handlers/noflex/handleInternalNoFlex.js";
 import mysql from "mysql";
-import { logCyan, logRed } from "../src/funciones/logsCustom.js";
+import { logCyan, logRed, logYellow } from "../src/funciones/logsCustom.js";
 
 export async function colectar(company, dataQr, userId, profile, autoAssign) {
     const dbConfig = getProdDbConfig(company);
@@ -38,12 +38,12 @@ export async function colectar(company, dataQr, userId, profile, autoAssign) {
             logCyan("No es flex");
             /// Si la empresa del QR es la misma que la empresa del usuario, es interno
             if (company.did == dataQr.empresa) {
-                logCyan("Es externo");
+                logCyan("Es interno");
                 response = await handleInternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign);
 
                 /// Si la empresa del QR es distinta a la empresa del usuario, es externo
             } else {
-                logCyan("Es interno");
+                logCyan("Es externo");
                 response = await handleExternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign);
             }
         }
