@@ -12,7 +12,7 @@ export async function assign(companyId, userId, profile, dataQr, driverId) {
         model: "null",
         androidVersion: "null",
         deviceId: "null",
-        dataQr: JSON.stringify(dataQr),
+        dataQr: dataQr,
         driverId: driverId,
         deviceFrom: "Autoasignado de colecta"
     };
