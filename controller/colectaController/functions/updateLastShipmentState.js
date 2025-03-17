@@ -30,8 +30,7 @@ export async function updateLastShipmentState(dbConnection, shipmentId) {
             WHERE didEnvio = ? AND superado = 0 AND elim = 0
         `;
         const cadeteResults = await executeQuery(dbConnection, sqlDidCadete, [shipmentId]);
-console.log(cadeteResults,"cadeteResults");
-console.log(shipmentId,"shipmentId");
+
 
 
         const didCadete = cadeteResults.length > 0 ? cadeteResults[0].quien : 0;
@@ -43,10 +42,9 @@ console.log(shipmentId,"shipmentId");
             VALUES (?, ?, ?, ?, ?)
         `;
         await executeQuery(dbConnection, sqlInsertHistorial, [shipmentId, estado, didCadete, fechaT, didCadete]);
-        console.log(didCadete,"DID");
-        
+
     } catch (error) {
-        logRed(`Error en updateLastShipmentState: ${error.message}`);
+        logRed(`Error en updateLastShipmentState: ${error.stack}`);
         throw error;
     }
 }

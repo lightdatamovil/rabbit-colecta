@@ -22,7 +22,7 @@ export async function insertEnviosExteriores(dbConnection, internoShipmentId, ex
 
         return result.insertId;
     } catch (error) {
-        logRed(`Error en insertEnviosExteriores: ${error.message}`);
+        logRed(`Error en insertEnviosExteriores: ${error.stack}`);
         throw error;
     }
 }

@@ -49,7 +49,7 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
 
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
-        logRed(`Error en handleInternalNoFlex: ${error.message}`);
+        logRed(`Error en handleInternalNoFlex: ${error.stack}`);
         throw error;
     }
 }

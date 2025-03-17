@@ -39,7 +39,7 @@ async function startConsumer() {
 
                     const company = await getCompanyById(body.companyId);
 
-                    const result = await colectar(company, body.dataQr, body.userId, body.profile, body.autoAssign);
+                    const result = await colectar(company, JSON.parse(body.dataQr), body.userId, body.profile, body.autoAssign);
 
                     result.feature = "colecta";
 
@@ -50,16 +50,16 @@ async function startConsumer() {
                     const endTime = performance.now();
                     logPurple(`Tiempo de ejecución: ${endTime - startTime} ms`);
                 } catch (error) {
-                    logRed(`Error al procesar el mensaje: ${error.message}`);
+                    logRed(`Error al procesar el mensaje: ${error.stack}`);
 
                     let a = channel.sendToQueue(
                         body.channel,
-                        Buffer.from(JSON.stringify({ feature: body.feature, estadoRespuesta: false, mensaje: error.message })),
+                        Buffer.from(JSON.stringify({ feature: body.feature, estadoRespuesta: false, mensaje: error.stack, error: true })),
                         { persistent: true }
                     );
 
                     if (a) {
-                        logGreen(`Mensaje enviado al canal ${body.channel}: ${error.message}`);
+                        logGreen(`Mensaje enviado al canal ${body.channel}: ${error.stack}`);
                     }
 
                     const endTime = performance.now();
@@ -70,7 +70,7 @@ async function startConsumer() {
             }
         });
     } catch (error) {
-        logRed(`Error al conectar con RabbitMQ: ${error.message}`);
+        logRed(`Error al conectar con RabbitMQ: ${error.stack}`);
     }
 }
 
