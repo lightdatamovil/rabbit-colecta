@@ -71,7 +71,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
 
         return { estadoRespuesta: true, mensaje: "Paquete insertado y colectado - FLEX", body: body };
     } catch (error) {
-        logRed(`Error en handleInternalFlex: ${error.message}`);
+        logRed(`Error en handleInternalFlex: ${error.stack}`);
         throw error;
     }
 }

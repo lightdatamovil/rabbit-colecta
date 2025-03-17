@@ -33,7 +33,7 @@ export async function sendToShipmentStateMicroService(companyId, userId, shipmen
             connection.close();
         });
     } catch (error) {
-        logRed(`Error en sendToShipmentStateMicroService: ${error.message}`);
+        logRed(`Error en sendToShipmentStateMicroService: ${error.stack}`);
         throw error;
     }
 };

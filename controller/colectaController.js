@@ -50,7 +50,7 @@ export async function colectar(company, dataQr, userId, profile, autoAssign) {
 
         return response;
     } catch (error) {
-        logRed(`Error en colectar: ${error.message}`);
+        logRed(`Error en colectar: ${error.stack}`);
         throw error;
     } finally {
         dbConnection.end();

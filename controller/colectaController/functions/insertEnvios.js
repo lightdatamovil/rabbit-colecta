@@ -57,7 +57,7 @@ export async function insertEnvios(dbConnection, companyId, clientId, accountId,
 
         return result.insertId;
     } catch (error) {
-        logRed(`Error en insertEnvios: ${error.message}`);
+        logRed(`Error en insertEnvios: ${error.stack}`);
         throw error;
     }
 }

@@ -176,7 +176,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         }
     } catch (error) {
-        logRed(`Error en handleExternalFlex: ${error.message}`);
+        logRed(`Error en handleExternalFlex: ${error.stack}`);
         throw error;
     }
 

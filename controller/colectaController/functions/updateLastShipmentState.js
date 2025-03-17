@@ -41,7 +41,7 @@ export async function updateLastShipmentState(dbConnection, shipmentId) {
         `;
         await executeQuery(dbConnection, sqlInsertHistorial, [shipmentId, estado, didCadete, fechaT, didCadete]);
     } catch (error) {
-        logRed(`Error en updateLastShipmentState: ${error.message}`);
+        logRed(`Error en updateLastShipmentState: ${error.stack}`);
         throw error;
     }
 }

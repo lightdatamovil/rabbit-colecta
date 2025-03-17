@@ -12,7 +12,7 @@ export async function checkIfExistLogisticAsDriverInExternalCompany(dbConnection
 
         return chofer[0].usuario;
     } catch (error) {
-        logRed(`Error en checkIfExistLogisticAsDriverInExternalCompany: ${error.message}`);
+        logRed(`Error en checkIfExistLogisticAsDriverInExternalCompany: ${error.stack}`);
         throw error;
     }
 }

@@ -63,7 +63,7 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
             retiradoshoymi,
         };
     } catch (error) {
-        logRed(`Error en informe: ${error.message}`);
+        logRed(`Error en informe: ${error.stack}`);
         throw error;
     }
 }

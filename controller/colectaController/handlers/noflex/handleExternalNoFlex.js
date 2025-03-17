@@ -125,7 +125,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
 
         return { estadoRespuesta: true, mensaje: "Paquete colectado con exito", body: body };
     } catch (error) {
-        logRed(`Error en handleExternalNoFlex: ${error.message}`);
+        logRed(`Error en handleExternalNoFlex: ${error.stack}`);
         throw error;
     }
 }
