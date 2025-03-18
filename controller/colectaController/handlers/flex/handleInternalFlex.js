@@ -57,7 +57,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
         logCyan("Actualice el ml_qr_seguridad del envio");
 
         /// Actualizo el estado del envío y lo envío al microservicio de estados
-        await updateLastShipmentState(dbConnection, shipmentId);
+ 
         await sendToShipmentStateMicroService(companyId, userId, shipmentId);
         logCyan("Actualice el estado del envio y lo envie al microservicio de estados");
 

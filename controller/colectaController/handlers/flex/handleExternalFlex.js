@@ -133,12 +133,12 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
             logCyan("Inserte el envio en envios exteriores");
 
             /// Actualizo el estado del envío y lo envío al microservicio de estados en la logística interna
-            await updateLastShipmentState(dbConnection, internalShipmentId);
+         
             await sendToShipmentStateMicroService(company.did, userId, internalShipmentId);
             logCyan("Actualice el estado del envio y lo envie al microservicio de estados en la logistica interna");
 
             /// Actualizo el estado del envío y lo envío al microservicio de estados en la logística externa
-            await updateLastShipmentState(externalDbConnection, externalShipmentId);
+         
             await sendToShipmentStateMicroService(externalCompanyId, externalClientId, externalShipmentId);
             logCyan("Actualice el estado del envio y lo envie al microservicio de estados en la logistica externa");
 
