@@ -49,5 +49,5 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
     } catch (error) {
         logRed(`Error en handleInternalNoFlex: ${error.stack}`);
         throw error;
-    }
+    } 
 }
