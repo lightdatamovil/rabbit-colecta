@@ -39,7 +39,7 @@ async function startConsumer() {
 
                     const company = await getCompanyById(body.companyId);
 
-                    const result = await colectar(company, body.dataQr, body.userId, body.profile, body.autoAssign);
+                    const result = await colectar(company, JSON.parse(body.dataQr), body.userId, body.profile, body.autoAssign);
 
                     result.feature = "colecta";
 
