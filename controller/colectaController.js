@@ -44,7 +44,7 @@ export async function colectar(company, dataQr, userId, profile, autoAssign) {
                 /// Si la empresa del QR es distinta a la empresa del usuario, es externo
             } else {
                 logCyan("Es externo");
-                response = await handleExternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign);
+                response = await handleExternalNoFlex(dbConnection, JSON.parse(dataQr), company.did, userId, profile, autoAssign);
             }
         }
 
