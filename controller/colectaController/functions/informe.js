@@ -1,77 +1,54 @@
-import { executeQuery, getClientsByCompany, getDriversByCompany } from '../../../db.js'; 
+import { executeQuery, getClientsByCompany, getDriversByCompany } from '../../../db.js'; // Asegúrate de importar correctamente executeQuery
 import { logCyan, logRed, logYellow } from '../../../src/funciones/logsCustom.js';
 
-// Contadores en memoria
-const contadorIngresadosCliente = {}; // Clave: `${fecha}:${clienteId}`
-const contadorRetiradosUsuario = {}; // Clave: `${fecha}:${userId}`
-const contadorAretirarCliente = {}; // Clave: `${fecha}:${clienteId}`
-
-// Función para incrementar "ingresados hoy" de un cliente
-function incrementarIngresados(fecha, clienteId) {
-    const clave = `${fecha}:${clienteId}`;
-    if (!contadorIngresadosCliente[clave]) {
-        contadorIngresadosCliente[clave] = 0;
-    }
-    contadorIngresadosCliente[clave]++;
-}
-
-// Función para obtener "ingresados hoy" de un cliente
-function obtenerIngresados(fecha, clienteId) {
-    return contadorIngresadosCliente[`${fecha}:${clienteId}`] || 0;
-}
-
-// Función para incrementar "retirados hoy" por un usuario
-function incrementarRetirados(fecha, userId) {
-    const clave = `${fecha}:${userId}`;
-    if (!contadorRetiradosUsuario[clave]) {
-        contadorRetiradosUsuario[clave] = 0;
-    }
-    contadorRetiradosUsuario[clave]++;
-}
-
-// Función para obtener "retirados hoy" por un usuario
-function obtenerRetirados(fecha, userId) {
-    return contadorRetiradosUsuario[`${fecha}:${userId}`] || 0;
-}
-
-// Función para incrementar "a retirar hoy" de un cliente
-function incrementarAretirar(fecha, clienteId) {
-    const clave = `${fecha}:${clienteId}`;
-    if (!contadorAretirarCliente[clave]) {
-        contadorAretirarCliente[clave] = 0;
-    }
-    contadorAretirarCliente[clave]++;
-}
-
-// Función para obtener "a retirar hoy" de un cliente
-function obtenerAretirar(fecha, clienteId) {
-    return contadorAretirarCliente[`${fecha}:${clienteId}`] || 0;
-}
-
-// Función para limpiar los contadores cada 14 días
-function limpiarContadores() {
-    console.log("🔄 Reiniciando contadores...");
-    Object.keys(contadorIngresadosCliente).forEach(clave => delete contadorIngresadosCliente[clave]);
-    Object.keys(contadorRetiradosUsuario).forEach(clave => delete contadorRetiradosUsuario[clave]);
-    Object.keys(contadorAretirarCliente).forEach(clave => delete contadorAretirarCliente[clave]);
-}
-
-// Ejecutar limpieza cada 14 días
-setInterval(limpiarContadores, 14 * 24 * 60 * 60 * 1000);
-
-// 🚀 Función principal
 export async function informe(dbConnection, companyId, clientId, userId, shipmentId) {
     try {
         let hoy = new Date().toISOString().split('T')[0];
         let ayer = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        // 🚀 Obtener datos desde los contadores en memoria
-        let retiradoshoy = obtenerIngresados(hoy, clientId);
-        let aretirarHoy = obtenerAretirar(ayer, clientId);
-        let retiradoshoymi = obtenerRetirados(hoy, userId);
+        // Ingresados hoy
+        const sql1 = `SELECT COUNT(id) as total FROM envios 
+               WHERE superado=0 AND elim=0 
+               AND autofecha BETWEEN ? AND ? 
+               AND didCliente = ?`;
+        const resultsql1 = await executeQuery(dbConnection, sql1, [`${hoy} 00:00:00`, `${hoy} 23:59:59`, clientId]);
 
-        // Verificar cliente en la empresa
+        let retiradoshoy = resultsql1.length > 0 ? resultsql1[0].total : 0;
+
+        // Total a colectar del cliente
+        const sql2 = `
+            SELECT count(e.id) as total
+			FROM envios as e
+			JOIN envios_historial as eh on ( eh.elim=0 and eh.superado=0
+            AND eh.estado=7
+            AND eh.didEnvio = e.did ) 
+			WHERE e.superado=0
+            AND e.elim=0
+            AND e.didCliente = ?
+            AND eh.fecha > ?
+        `;
+
+        const resultsql2 = await executeQuery(dbConnection, sql2, [clientId, `${ayer} 00:00:00`]);
+
+        let cliente_total = resultsql2.length > 0 ? resultsql2[0].total : 0;
+        let aretirarHoy = cliente_total;
+
+        // Retirados hoy por mí
+        const sql4 = `
+            SELECT COUNT(id) as total
+            FROM envios_historial 
+            WHERE superado=0
+            AND elim=0
+            AND quien IN (?) 
+            AND (autofecha > ? and autofecha < ?)
+            AND estado=0
+        `;
+
+        const resultsql4 = await executeQuery(dbConnection, sql4, [userId, `${hoy} 00:00:00`, `${hoy} 23:59:59`]);
+        let retiradoshoymi = resultsql4.length > 0 ? resultsql4[0].total : 0;
+
         const companyClients = await getClientsByCompany(dbConnection, companyId);
+
         if (companyClients[clientId] === undefined) {
             throw new Error("Cliente no encontrado");
         }
@@ -80,7 +57,7 @@ export async function informe(dbConnection, companyId, clientId, userId, shipmen
         logCyan("Se generó el informe");
         return {
             cliente: companyClients[clientId].nombre || 'Sin informacion',
-            cliente_total: aretirarHoy,
+            cliente_total,
             aretirarHoy,
             retiradoshoy,
             retiradoshoymi,
