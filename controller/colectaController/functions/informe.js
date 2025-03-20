@@ -57,7 +57,7 @@ export async function informe(dbConnection, companyId, clientId, userId) {
             const resultsql4 = await executeQuery(dbConnection, sql4, [userId, `${hoy} 00:00:00`, `${hoy} 23:59:59`]);
             end = Date.now();
             logYellow(`Tiempo consulta sql4: ${end - start}ms`);
-            cache[cacheKey] = resultsql4.length > 0 ? resultsql4[0].total : 0;
+            cache[cacheKey] = resultsql4.length > 0 && resultsql4[0].total > 0 ? resultsql4[0].total : 1;
         } else {
             cache[cacheKey] += 1;
         }
