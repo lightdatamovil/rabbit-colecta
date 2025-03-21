@@ -33,6 +33,16 @@ export function getProdDbConfig(company) {
         database: company.dbname
     };
 }
+export function getLocalDbConfig() {
+    return {
+       // host: "localhost",
+        host: "149.56.182.49",
+        user:"ulogs" ,
+        password: "logs123456*",
+        database: "data",
+        port: 44343
+    };
+}
 export async function updateRedis(empresaId, envioId, choferId) {
     const DWRTE = await redisClient.get('DWRTE',);
     const empresaKey = `e.${empresaId}`;
