@@ -12,9 +12,7 @@ dotenv.config({ path: process.env.ENV_FILE || '.env' });
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL;
 const QUEUE_NAME_COLECTA = process.env.QUEUE_NAME_COLECTA;;
-const dbConfigLocal = getLocalDbConfig();
-const dbConnectionLocal = mysql.createConnection(dbConfigLocal);
-dbConnectionLocal.connect();
+
 async function startConsumer() {
     try {
         await redisClient.connect();
@@ -46,15 +44,15 @@ async function startConsumer() {
 
                     const company = await getCompanyById(body.companyId);
 
-                    const result = await colectar(company, JSON.parse(body.dataQr), body.userId, body.profile, body.autoAssign,dbConnectionLocal);
+                    const result = await colectar(company, JSON.parse(body.dataQr), body.userId, body.profile, body.autoAssign,body);
 
                     result.feature = "colecta";
 
                     channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), { persistent: true });
 
                     logGreen(`Mensaje enviado al canal ${body.channel}: ${JSON.stringify(result)}`);
-                    crearLog(body.companyId,body.userId,dataQr.did, "1", body, body.userId,dbConnectionLocal);
-                    dbConnectionLocal.end();
+         
+             
 
                     const endTime = performance.now();
                     logPurple(`Tiempo de ejecución: ${endTime - startTime} ms`);
@@ -82,8 +80,6 @@ async function startConsumer() {
     } catch (error) {
 
         logRed(`Error al conectar con RabbitMQ: ${error.stack}`);
-    }finally{
-        
     }
 }
 

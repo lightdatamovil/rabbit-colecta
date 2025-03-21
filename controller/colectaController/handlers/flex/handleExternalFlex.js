@@ -67,7 +67,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
             if (!driver) {
                 externalDbConnection.end();
-                crearLog(codLocal, userId, shipmentId, "colecta", "No se encontró chofer asignado", "colecta",userId,dbConnectionLocal);
+          
                 return { estadoRespuesta: false, mensaje: "No se encontró chofer asignado" };
             }
 
@@ -91,7 +91,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
                 if (rowsCuentas.length == 0) {
                     externalDbConnection.end();
-                    crearLog(codLocal, userId, shipmentId, "coelcta", "No se encontró cuenta asociada", "colecta",userId,dbConnectionLocal);
+                 ;
                     return { estadoRespuesta: false, mensaje: "No se encontró cuenta asociada" };
                 }
 
@@ -111,7 +111,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
             const check = await checkearEstadoEnvio(externalDbConnection, externalShipmentId);
             if (check) {
                 externalDbConnection.end();
-crearLog(codLocal, userId, shipmentId, "colecta", "El envio ya fue colectado cancelado o entregado", "colecta",userId,dbConnectionLocal);
+
                 return check;
             };
             logCyan("El envio no fue colectado cancelado o entregado");
@@ -174,7 +174,7 @@ crearLog(codLocal, userId, shipmentId, "colecta", "El envio ya fue colectado can
             const body = await informe(dbConnection, company.did, internalClient[0].didCliente, userId, internalShipmentId);
 
 
-            crearLog(company.did,userId,dataQr.did, "colecta", { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body },userId,dbConnectionLocal);
+       
             return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente - FLEX", body: body };
 
         }
