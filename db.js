@@ -36,7 +36,7 @@ export function getProdDbConfig(company) {
 export function getLocalDbConfig() {
     return {
         host: "localhost",
-        host: "149.56.182.49",
+     //   host: "149.56.182.49",
         user:"ulogs" ,
         password: "logs123456*",
         database: "data",
