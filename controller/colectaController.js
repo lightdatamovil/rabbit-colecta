@@ -63,7 +63,7 @@ dbConnectionLocal.connect();
         throw error;
     } finally {
         dbConnectionLocal.end();
-        dbConnection.connect();
+        dbConnection.end();
      
     }
 }
