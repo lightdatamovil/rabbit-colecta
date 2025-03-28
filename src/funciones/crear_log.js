@@ -1,7 +1,9 @@
 import { executeQuery } from '../../db.js';
 export async function crearLog(idEmpresa, operador,shipmentId, endpoint, result, quien,conLocal, error, modelo, marca, versionAndroid, versionApp) {
    console.log("llegamos a entrar");
-   
+   if (shipmentId == null || shipmentId == undefined) {
+shipmentId = 0       
+   }
     try {
         const fechaunix = Date.now();
         const sqlLog = `INSERT INTO logs (didempresa,didEnvio, quien, cadete, data, fechaunix,procesado,error) VALUES (?,?, ?, ?, ?, ?, ?,?)`;
