@@ -32,7 +32,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
 
         /// Si no existe, lo inserto y tomo el did
         if (resultBuscarEnvio.length === 0) {
-            shipmentId = await insertEnvios(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0);
+            shipmentId = await insertEnvios(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0,userId);
             resultBuscarEnvio = await executeQuery(dbConnection, sql, [mlShipmentId, senderId]);
             logCyan("Inserte el envio");
         } else {
