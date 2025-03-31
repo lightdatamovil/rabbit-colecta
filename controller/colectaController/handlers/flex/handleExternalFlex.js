@@ -179,7 +179,6 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
 
         }
     } catch (error) {
-crearLog(company.did,userId,dataQr.did, "colecta", { estadoRespuesta: false, mensaje: "Error en handleExternalFlex" },userId,dbConnectionLocal,error.stack);
         logRed(`Error en handleExternalFlex: ${error.stack}`);
         throw error;
     }
