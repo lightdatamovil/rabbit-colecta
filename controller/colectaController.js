@@ -13,8 +13,8 @@ export async function colectar(company, dataQr, userId, profile, autoAssign,body
     const dbConnection = mysql.createConnection(dbConfig);
     dbConnection.connect();
     const dbConfigLocal = getLocalDbConfig();
-const dbConnectionLocal = mysql.createConnection(dbConfigLocal);
-dbConnectionLocal.connect();
+    const dbConnectionLocal = mysql.createConnection(dbConfigLocal);
+    dbConnectionLocal.connect();
    
 
     try {
@@ -28,6 +28,7 @@ dbConnectionLocal.connect();
             logCyan("Es flex");
             /// Busco la cuenta del cliente
             const account = await getAccountBySenderId(dbConnection, company.did, dataQr.sender_id);
+console.log(account,"account");
 
             /// Si la cuenta existe, es interno
             if (account) {
@@ -53,6 +54,7 @@ dbConnectionLocal.connect();
                 response = await handleExternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign);
             }
         }
+        logYellow(`Response: ${JSON.stringify(response)}`);
 
         crearLog(company.did,userId,dataQr.did, "1", body,userId,dbConnectionLocal,JSON.stringify(response));
         return response;

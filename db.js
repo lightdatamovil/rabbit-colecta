@@ -162,8 +162,11 @@ async function loadAccountList(dbConnection, companyId, senderId) {
 }
 
 export async function getAccountBySenderId(dbConnection, companyId, senderId) {
+    logYellow(`getAccountBySenderId: ${companyId} - ${senderId}`);
+
     try {
         if (accountList === undefined || accountList === null || Object.keys(accountList).length === 0 || !accountList[companyId]) {
+            logYellow(`Cargando mis cuentas...`);
             await loadAccountList(dbConnection, companyId, senderId);
         }
 

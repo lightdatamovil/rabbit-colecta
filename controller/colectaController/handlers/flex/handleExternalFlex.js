@@ -32,9 +32,13 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
             FROM clientes 
             WHERE superado = 0 AND elim = 0 AND codigoVinculacionLogE != ''
         `;
-        const logisticasExternas = await executeQuery(dbConnection, queryLogisticasExternas);
+        const logisticasExternas = await executeQuery(dbConnection, queryLogisticasExternas,[],true);
         logCyan("Me traigo las logisticas externas");
 
+        if (logisticasExternas.length === 0) {
+            logRed("No hay logisticas externas");
+         throw new Error(`La cuenta de ML: ${dataQr.sender_id} no esta vinculada`);
+        }
         /// Por cada logística externa
         for (const logistica of logisticasExternas) {
             logCyan(`logistica externa actual: ${logistica.nombre_fantasia}`);
