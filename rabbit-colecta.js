@@ -57,9 +57,12 @@ async function startConsumer() {
                     const endTime = performance.now();
                     logPurple(`Tiempo de ejecución: ${endTime - startTime} ms`);
                 } catch (error) {
+                    
+                    body.feature = "colecta";
                     logRed(`Error al procesar el mensaje: ${error.stack}`);
 
                     let a = channel.sendToQueue(
+
                         body.channel,
                         Buffer.from(JSON.stringify({ feature: body.feature, estadoRespuesta: false, mensaje: error.stack, error: true })),
                         { persistent: true }
