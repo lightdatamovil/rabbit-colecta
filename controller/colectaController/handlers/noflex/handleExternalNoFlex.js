@@ -9,6 +9,7 @@ import { checkearEstadoEnvio } from "../../functions/checkarEstadoEnvio.js";
 import { checkIfExistLogisticAsDriverInExternalCompany } from "../../functions/checkIfExistLogisticAsDriverInExternalCompany.js";
 import { informe } from "../../functions/informe.js";
 import { logCyan, logRed, logYellow } from "../../../../src/funciones/logsCustom.js";
+import { crearLog } from "../../../../src/funciones/crear_log.js";
 
 /// Esta funcion se conecta a la base de datos de la empresa externa
 /// Checkea si el envio ya fue colectado, entregado o cancelado
@@ -17,7 +18,7 @@ import { logCyan, logRed, logYellow } from "../../../../src/funciones/logsCustom
 /// Asigno a la empresa externa
 /// Si es autoasignacion, asigno a la empresa interna
 /// Actualizo el estado del envio a colectado y envio el estado del envio en los microservicios
-export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign) {
+export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign,dbConnectionLocal) {
     try {
         const shipmentIdFromDataQr = dataQr.did;
         const clientIdFromDataQr = dataQr.cliente;
@@ -122,9 +123,11 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
         const body = await informe(dbConnection, companyId, externalClient[0].did, userId, internalShipmentId);
 
         externalDbConnection.end();
+        
 
         return { estadoRespuesta: true, mensaje: "Paquete colectado con exito", body: body };
     } catch (error) {
+     
         logRed(`Error en handleExternalNoFlex: ${error.stack}`);
         throw error;
     }

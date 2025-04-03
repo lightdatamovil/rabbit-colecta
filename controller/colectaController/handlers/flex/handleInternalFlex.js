@@ -6,13 +6,14 @@ import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentS
 import { informe } from "../../functions/informe.js";
 import { checkearEstadoEnvio } from "../../functions/checkarEstadoEnvio.js";
 import { logCyan, logRed, logYellow } from "../../../../src/funciones/logsCustom.js";
+import { crearLog } from "../../../../src/funciones/crear_log.js";
 
 /// Busco el envio
 /// Si no existe, lo inserto y tomo el did
 /// Checkeo si el envío ya fue colectado cancelado o entregado
 /// Actualizo el estado del envío y lo envío al microservicio de estados
 /// Asigno el envío al usuario si es necesario
-export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign, account) {
+export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign, account,dbConnectionLocal) {
     try {
         const senderId = dataQr.sender_id;
         const mlShipmentId = dataQr.id;
@@ -31,7 +32,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
 
         /// Si no existe, lo inserto y tomo el did
         if (resultBuscarEnvio.length === 0) {
-            shipmentId = await insertEnvios(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0);
+            shipmentId = await insertEnvios(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0,userId);
             resultBuscarEnvio = await executeQuery(dbConnection, sql, [mlShipmentId, senderId]);
             logCyan("Inserte el envio");
         } else {
@@ -45,6 +46,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
         const check = await checkearEstadoEnvio(dbConnection, shipmentId);
         if (check) return check;
         logCyan("El envio no fue colectado cancelado o entregado");
+ 
 
         const queryUpdateEnvios = `
                     UPDATE envios 
@@ -71,6 +73,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
 
         return { estadoRespuesta: true, mensaje: "Paquete insertado y colectado - FLEX", body: body };
     } catch (error) {
+
         logRed(`Error en handleInternalFlex: ${error.stack}`);
         throw error;
     }

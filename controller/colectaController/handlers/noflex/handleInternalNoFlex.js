@@ -5,19 +5,26 @@ import { sendToShipmentStateMicroService } from "../../functions/sendToShipmentS
 import { updateLastShipmentState } from "../../functions/updateLastShipmentState.js";
 import { informe } from "../../functions/informe.js";
 import { logCyan, logRed } from "../../../../src/funciones/logsCustom.js";
+import { crearLog } from "../../../../src/funciones/crear_log.js";
+
 
 /// Esta funcion checkea si el envio ya fue colectado, entregado o cancelado
 /// Busca el chofer asignado al envio
 /// Si el envio no esta asignado y se quiere autoasignar, lo asigna
 /// Actualiza el estado del envio en el micro servicio
 /// Actualiza el estado del envio en la base de datos
-export async function handleInternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign) {
+export async function handleInternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign,dbConnectionLocal) {
     try {
         const shipmentId = dataQr.did;
 
         /// Chequeo si el envio ya fue colectado, entregado o cancelado
         const check = await checkearEstadoEnvio(dbConnection, shipmentId);
-        if (check) return check;
+        if (check) {
+
+            return check;
+
+        }
+
         logCyan("El envio no fue colectado, entregado o cancelado");
 
         /// Busco el estado del envio y el chofer asignado
@@ -26,6 +33,7 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
 
         /// Si no encuentro el envio mando error
         if (resultChoferAsignado.length === 0) {
+         
             return { estadoRespuesta: false, mensaje: "Paquete no encontrado" };
         }
         logCyan("Se encontro el chofer asignado");
@@ -44,9 +52,10 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
       
 
         const body = await informe(dbConnection, companyId, dataQr.cliente, userId, shipmentId);
-
+      
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
+
         logRed(`Error en handleInternalNoFlex: ${error.stack}`);
         throw error;
     } 

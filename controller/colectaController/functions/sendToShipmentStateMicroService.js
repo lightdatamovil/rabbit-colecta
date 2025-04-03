@@ -21,7 +21,8 @@ export async function sendToShipmentStateMicroService(companyId, userId, shipmen
             subestado: null,
             estadoML: null,
             fecha: formatFechaUTC3(),
-            quien: userId
+            quien: userId,
+              operacion: "colecta"
         };
 
         channel.sendToQueue(QUEUE_ESTADOS, Buffer.from(JSON.stringify(message)), { persistent: true }, (err, ok) => {
