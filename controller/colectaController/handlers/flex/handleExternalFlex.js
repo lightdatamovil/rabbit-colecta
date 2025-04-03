@@ -103,8 +103,14 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
                 const didcuenta_ext = rowsCuentas[0].did;
 
                 const result = await insertEnvios(externalDbConnection, externalCompanyId, externalClientId, didcuenta_ext, dataQr, 1, 0, driver);
+                const sqlEnvios2 = `
+                SELECT did, didCliente
+                FROM envios 
+                WHERE did = ? AND ml_vendedor_id = ? 
+                LIMIT 1
+            `;
 
-                rowsEnvios = await executeQuery(externalDbConnection, sqlEnvios, [result, senderid]);
+                rowsEnvios = await executeQuery(externalDbConnection, sqlEnvios2, [result, senderid]);
 
                 logCyan("Inserte el envio en la logistica externa");
 
