@@ -18,7 +18,6 @@ export async function informe(dbConnection, companyId, clientId, userId) {
                       AND didCliente = ?`;
         const resultsql1 = await executeQuery(dbConnection, sql1, [`${hoy} 00:00:00`, `${hoy} 23:59:59`, clientId]);
         end = Date.now();
-        logYellow(`Tiempo consulta sql1: ${end - start}ms`);
         let retiradoshoy = resultsql1.length > 0 ? resultsql1[0].total : 0;
 
         // Total a colectar del cliente
@@ -36,13 +35,12 @@ export async function informe(dbConnection, companyId, clientId, userId) {
         `;
         const resultsql2 = await executeQuery(dbConnection, sql2, [clientId, `${ayer} 00:00:00`]);
         end = Date.now();
-        logYellow(`Tiempo consulta sql2: ${end - start}ms`);
         let cliente_total = resultsql2.length > 0 ? resultsql2[0].total : 0;
         let aretirarHoy = cliente_total;
 
         // Clave en la caché
         const cacheKey = `${hoy}>${companyId}>${userId}`;
-        
+
         if (!(cacheKey in cache)) {
             start = Date.now();
             const sql4 = `
@@ -56,18 +54,16 @@ export async function informe(dbConnection, companyId, clientId, userId) {
             `;
             const resultsql4 = await executeQuery(dbConnection, sql4, [userId, `${hoy} 00:00:00`, `${hoy} 23:59:59`]);
             end = Date.now();
-            logYellow(`Tiempo consulta sql4: ${end - start}ms`);
             cache[cacheKey] = resultsql4.length > 0 && resultsql4[0].total > 0 ? resultsql4[0].total : 1;
         } else {
             cache[cacheKey] += 1;
         }
-        
+
         let retiradoshoymi = cache[cacheKey];
 
         start = Date.now();
         const companyClients = await getClientsByCompany(dbConnection, companyId);
         end = Date.now();
-        logYellow(`Tiempo consulta getClientsByCompany: ${end - start}ms`);
 
         if (companyClients[clientId] === undefined) {
             throw new Error("Cliente no encontrado");
