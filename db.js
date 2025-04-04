@@ -35,9 +35,9 @@ export function getProdDbConfig(company) {
 }
 export function getLocalDbConfig() {
     return {
-       // host: "localhost",
+        // host: "localhost",
         host: "149.56.182.49",
-        user:"ulogs" ,
+        user: "ulogs",
         password: "logs123456*",
         database: "data",
         port: 44343
@@ -162,8 +162,6 @@ async function loadAccountList(dbConnection, companyId, senderId) {
 }
 
 export async function getAccountBySenderId(dbConnection, companyId, senderId) {
-    logYellow(`getAccountBySenderId: ${companyId} - ${senderId}`);
-
     try {
         if (accountList === undefined || accountList === null || Object.keys(accountList).length === 0 || !accountList[companyId]) {
             logYellow(`Cargando mis cuentas...`);
