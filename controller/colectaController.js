@@ -8,10 +8,11 @@ import { logCyan, logRed, logYellow } from "../src/funciones/logsCustom.js";
 import { crearLog } from "../src/funciones/crear_log.js";
 
 
-export async function colectar(company, dataQr, userId, profile, autoAssign, body) {
+export async function colectar(startTime, company, dataQr, userId, profile, autoAssign, body) {
     const dbConfig = getProdDbConfig(company);
     const dbConnection = mysql.createConnection(dbConfig);
     dbConnection.connect();
+
     const dbConfigLocal = getLocalDbConfig();
     const dbConnectionLocal = mysql.createConnection(dbConfigLocal);
     dbConnectionLocal.connect();
@@ -54,10 +55,14 @@ export async function colectar(company, dataQr, userId, profile, autoAssign, bod
             }
         }
 
-        crearLog(company.did, userId, dataQr.did, "1", body, userId, dbConnectionLocal, JSON.stringify(response));
+        const endTime = performance.now();
+        const tiempo = endTime - startTime;
+        crearLog(dbConnectionLocal, company.did, userId, body.profile, body, tiempo, response, "rabbit", true);
         return response;
     } catch (error) {
-        crearLog(company.did, userId, dataQr.did, "-1", dataQr, userId, dbConnectionLocal, error.message);
+        const endTime = performance.now();
+        const tiempo = endTime - startTime;
+        crearLog(dbConnectionLocal, company.did, userId, body.profile, body, tiempo, response, "rabbit", false);
 
         logRed(`Error en colectar: ${error.stack}`);
         throw error;

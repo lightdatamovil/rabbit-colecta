@@ -81,7 +81,7 @@ function startConsuming(channel) {
             const company = await getCompanyById(body.companyId);
             const dataQr = JSON.parse(body.dataQr);
 
-            const result = await colectar(company, dataQr, body.userId, body.profile, body.autoAssign, body);
+            const result = await colectar(startTime, company, dataQr, body.userId, body.profile, body.autoAssign, body);
             result.feature = "colecta";
 
             channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), { persistent: true });
