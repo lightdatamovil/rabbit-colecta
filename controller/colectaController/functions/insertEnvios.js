@@ -2,7 +2,7 @@ import { executeQuery } from '../../../db.js';
 import axios from "axios";
 import { logRed } from '../../../src/funciones/logsCustom.js';
 
-export async function insertEnvios(dbConnection, companyId, clientId, accountId, dataQr, flex, externo, driverId) {
+export async function insertEnvios(dbConnection, companyId, clientId, accountId, dataQr, flex, externo, driverId,lalitud,longitud) {
     const lote = Math.random().toString(36).substring(2, 15);
     const fecha_inicio = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const idshipment = dataQr.id;
@@ -22,11 +22,11 @@ export async function insertEnvios(dbConnection, companyId, clientId, accountId,
         );
 
         const sqlInsertHistorial = `
-            INSERT INTO envios_historial (didEnvio, estado, quien, fecha, didCadete) 
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO envios_historial (didEnvio, estado, quien, fecha, didCadete,latitud, longitud) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await executeQuery(dbConnection, sqlInsertHistorial, [result.insertId, 0, 1, fechaunix, driverId]);
+        await executeQuery(dbConnection, sqlInsertHistorial, [result.insertId, 0, 1, fechaunix, driverId,latitud,longitud]);
         if (result.insertId) {
             await axios.post(
                 'https://altaenvios.lightdata.com.ar/api/enviosMLredis',

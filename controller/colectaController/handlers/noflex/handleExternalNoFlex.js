@@ -18,12 +18,12 @@ import { crearLog } from "../../../../src/funciones/crear_log.js";
 /// Asigno a la empresa externa
 /// Si es autoasignacion, asigno a la empresa interna
 /// Actualizo el estado del envio a colectado y envio el estado del envio en los microservicios
-export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign,dbConnectionLocal) {
+export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign,dbConnectionLocal,latitud,longitud) {
     try {
         const shipmentIdFromDataQr = dataQr.did;
         const clientIdFromDataQr = dataQr.cliente;
 
-        /// Busco la empresa externa
+        /// Busco la empresa externas
         const externalCompany = await getCompanyById(dataQr.empresa);
 
         /// Conecto a la base de datos de la empresa externa
@@ -79,7 +79,9 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
                 { id: "", sender_id: "" },
                 0,
                 1,
-                driver
+                driver,
+                latitud,
+                longitud
             );
             logCyan("Inserté en envios");
         }
