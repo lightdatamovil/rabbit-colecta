@@ -19,7 +19,7 @@ import { crearLog } from "../../../../src/funciones/crear_log.js";
 /// Inserto el envio en la tabla envios y envios exteriores de la logística interna
 /// Actualizo el estado del envío y lo envío al microservicio de estados en la logística interna
 /// Actualizo el estado del envío y lo envío al microservicio de estados en la logística externa
-export async function handleExternalFlex(dbConnection, company, userId, profile, dataQr, autoAssign, dbConnectionLocal) {
+export async function handleExternalFlex(dbConnection, company, userId, profile, dataQr, autoAssign, dbConnectionLocal,latitud,longitud) {
     try {
         const senderid = dataQr.sender_id;
         const shipmentId = dataQr.id;
@@ -102,7 +102,7 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
                 externalClientId = rowsCuentas[0].didCliente;
                 const didcuenta_ext = rowsCuentas[0].did;
 
-                const result = await insertEnvios(externalDbConnection, externalCompanyId, externalClientId, didcuenta_ext, dataQr, 1, 0, driver);
+                const result = await insertEnvios(externalDbConnection, externalCompanyId, externalClientId, didcuenta_ext, dataQr, 1, 0, driver,latitud,longitud);
                 const sqlEnvios2 = `
                 SELECT did, didCliente
                 FROM envios 
