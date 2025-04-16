@@ -62,7 +62,7 @@ export async function colectar(startTime, company, dataQr, userId, profile, auto
     } catch (error) {
         const endTime = performance.now();
         const tiempo = endTime - startTime;
-        crearLog(dbConnectionLocal, company.did, userId, body.profile, body, tiempo, response, "rabbit", false);
+        crearLog(dbConnectionLocal, company.did, userId, body.profile, body, tiempo, error.stack, "rabbit", false);
 
         logRed(`Error en colectar: ${error.stack}`);
         throw error;
