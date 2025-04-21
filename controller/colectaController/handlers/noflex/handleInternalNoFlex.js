@@ -13,7 +13,7 @@ import { crearLog } from "../../../../src/funciones/crear_log.js";
 /// Si el envio no esta asignado y se quiere autoasignar, lo asigna
 /// Actualiza el estado del envio en el micro servicio
 /// Actualiza el estado del envio en la base de datos
-export async function handleInternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign,dbConnectionLocal,latitud,longitud) {
+export async function handleInternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign, latitud, longitud) {
     try {
         const shipmentId = dataQr.did;
 
@@ -33,7 +33,7 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
 
         /// Si no encuentro el envio mando error
         if (resultChoferAsignado.length === 0) {
-         
+
             return { estadoRespuesta: false, mensaje: "Paquete no encontrado" };
         }
         logCyan("Se encontro el chofer asignado");
@@ -46,17 +46,17 @@ export async function handleInternalNoFlex(dbConnection, dataQr, companyId, user
         }
 
         /// Actualizamos el estado del envio en el micro servicio
-        await sendToShipmentStateMicroService(companyId, userId, shipmentId,latitud,longitud);
+        await sendToShipmentStateMicroService(companyId, userId, shipmentId, latitud, longitud);
         logCyan("Se actualizo el estado del envio en el micro servicio");
 
-      
+
 
         const body = await informe(dbConnection, companyId, dataQr.cliente, userId, shipmentId);
-      
+
         return { estadoRespuesta: true, mensaje: "Paquete colectado correctamente", body: body };
     } catch (error) {
 
         logRed(`Error en handleInternalNoFlex: ${error.stack}`);
         throw error;
-    } 
+    }
 }

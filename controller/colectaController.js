@@ -33,12 +33,12 @@ export async function colectar(startTime, company, dataQr, userId, profile, auto
             /// Si la cuenta existe, es interno
             if (account) {
                 logCyan("Es interno");
-                response = await handleInternalFlex(dbConnection, company.did, userId, profile, dataQr, autoAssign, account,body.latitud,body.longitud);
+                response = await handleInternalFlex(dbConnection, company.did, userId, profile, dataQr, autoAssign, account, body.latitud, body.longitud);
 
                 /// Si la cuenta no existe, es externo
             } else {
                 logCyan("Es externo");
-                response = await handleExternalFlex(dbConnection, company, userId, profile, dataQr, autoAssign,dbConnectionLocal,body.latitud,body.longitud);
+                response = await handleExternalFlex(dbConnection, company, userId, profile, dataQr, autoAssign, body.latitud, body.longitud);
             }
             /// Si no es flex
         } else {
@@ -46,12 +46,12 @@ export async function colectar(startTime, company, dataQr, userId, profile, auto
             /// Si la empresa del QR es la misma que la empresa del usuario, es interno
             if (company.did == dataQr.empresa) {
                 logCyan("Es interno");
-                response = await handleInternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign,dbConnectionLocal,body.latitud,body.longitud);
+                response = await handleInternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign, body.latitud, body.longitud);
 
                 /// Si la empresa del QR es distinta a la empresa del usuario, es externo
             } else {
                 logCyan("Es externo");
-                response = await handleExternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign,dbConnectionLocal,body.latitud,body.longitud);
+                response = await handleExternalNoFlex(dbConnection, dataQr, company.did, userId, profile, autoAssign, body.latitud, body.longitud);
             }
         }
 

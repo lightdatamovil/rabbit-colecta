@@ -13,8 +13,8 @@ import { crearLog } from "../../../../src/funciones/crear_log.js";
 /// Checkeo si el envío ya fue colectado cancelado o entregado
 /// Actualizo el estado del envío y lo envío al microservicio de estados
 /// Asigno el envío al usuario si es necesario
-export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign, account,dbConnectionLocal,latitud,longitud) {
-  
+export async function handleInternalFlex(dbConnection, companyId, userId, profile, dataQr, autoAssign, account, latitud, longitud) {
+
     try {
         const senderId = dataQr.sender_id;
         const mlShipmentId = dataQr.id;
@@ -33,7 +33,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
 
         /// Si no existe, lo inserto y tomo el did
         if (resultBuscarEnvio.length === 0) {
-            shipmentId = await insertEnvios(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0,userId,latitud,longitud);
+            shipmentId = await insertEnvios(dbConnection, companyId, account.didCliente, account.didCuenta, dataQr, 1, 0, userId, latitud, longitud);
             resultBuscarEnvio = await executeQuery(dbConnection, sql, [mlShipmentId, senderId]);
             logCyan("Inserte el envio");
         } else {
@@ -47,7 +47,7 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
         const check = await checkearEstadoEnvio(dbConnection, shipmentId);
         if (check) return check;
         logCyan("El envio no fue colectado cancelado o entregado");
- 
+
 
         const queryUpdateEnvios = `
                     UPDATE envios 
@@ -60,8 +60,8 @@ export async function handleInternalFlex(dbConnection, companyId, userId, profil
         logCyan("Actualice el ml_qr_seguridad del envio");
 
         /// Actualizo el estado del envío y lo envío al microservicio de estados
- 
-        await sendToShipmentStateMicroService(companyId, userId, shipmentId,latitud,longitud);
+
+        await sendToShipmentStateMicroService(companyId, userId, shipmentId, latitud, longitud);
         logCyan("Actualice el estado del envio y lo envie al microservicio de estados");
 
         /// Asigno el envío al usuario si es necesario

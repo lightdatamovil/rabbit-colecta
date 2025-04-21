@@ -18,7 +18,7 @@ import { crearLog } from "../../../../src/funciones/crear_log.js";
 /// Asigno a la empresa externa
 /// Si es autoasignacion, asigno a la empresa interna
 /// Actualizo el estado del envio a colectado y envio el estado del envio en los microservicios
-export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign,dbConnectionLocal,latitud,longitud) {
+export async function handleExternalNoFlex(dbConnection, dataQr, companyId, userId, profile, autoAssign, latitud, longitud) {
     try {
         const shipmentIdFromDataQr = dataQr.did;
         const clientIdFromDataQr = dataQr.cliente;
@@ -117,7 +117,7 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
         await sendToShipmentStateMicroService(companyId, userId, internalShipmentId);
         logCyan("Actualicé el estado del envio a colectado y envié el estado del envio en los microservicios internos");
 
-     
+
         await sendToShipmentStateMicroService(dataQr.empresa, driver, shipmentIdFromDataQr);
         logCyan("Actualicé el estado del envio a colectado y envié el estado del envio en los microservicios externos");
 
@@ -125,11 +125,11 @@ export async function handleExternalNoFlex(dbConnection, dataQr, companyId, user
         const body = await informe(dbConnection, companyId, externalClient[0].did, userId, internalShipmentId);
 
         externalDbConnection.end();
-        
+
 
         return { estadoRespuesta: true, mensaje: "Paquete colectado con exito", body: body };
     } catch (error) {
-     
+
         logRed(`Error en handleExternalNoFlex: ${error.stack}`);
         throw error;
     }
