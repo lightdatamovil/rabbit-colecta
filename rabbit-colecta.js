@@ -83,7 +83,10 @@ function startConsuming(channel) {
 
             const result = await colectar(startTime, company, dataQr, body.userId, body.profile, body.autoAssign, body);
             result.feature = "colecta";
-
+            await channel.assertQueue(body.channel, {
+                durable: true,
+                autoDelete: true
+            });
             channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), { persistent: true });
             logGreen(`📤 Enviado a ${body.channel}`);
         } catch (error) {
@@ -94,6 +97,10 @@ function startConsuming(channel) {
                 mensaje: error.stack,
                 error: true
             };
+            await channel.assertQueue(body.channel, {
+                durable: true,
+                autoDelete: true
+            });
             channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(fallback)), { persistent: true });
         } finally {
             const endTime = performance.now();
