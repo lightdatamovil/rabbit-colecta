@@ -26,7 +26,7 @@ export async function insertEnvios(dbConnection, companyId, clientId, accountId,
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await executeQuery(dbConnection, sqlInsertHistorial, [result.insertId, 0, 1, fechaunix, driverId, latitud, longitud]);
+        await executeQuery(dbConnection, sqlInsertHistorial, [result.insertId, 0, 1, fecha_inicio, driverId, latitud, longitud]);
         if (result.insertId) {
             await axios.post(
                 'https://altaenvios.lightdata.com.ar/api/enviosMLredis',
