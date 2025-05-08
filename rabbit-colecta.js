@@ -119,8 +119,14 @@ function startConsuming(channel) {
         body
       );
       result.feature = "colecta";
-
-      await sendToResponseQueue(body.channel, result);
+      await channel.assertQueue(body.channel, {
+        durable: true,
+        autoDelete: true,
+      });
+      channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), {
+        persistent: true,
+      });
+      logGreen(`📤 Enviado a ${body.channel}`);
     } catch (error) {
       logRed(`❌ Error procesando mensaje: ${error.stack}`);
       const fallback = {
@@ -129,18 +135,19 @@ function startConsuming(channel) {
         mensaje: error.stack,
         error: true,
       };
-      await sendToResponseQueue(body.channel, fallback);
+      await channel.assertQueue(body.channel, {
+        durable: true,
+        autoDelete: true,
+      });
+      channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(fallback)), {
+        persistent: true,
+      });
     } finally {
-      try {
-        channel.ack(msg);
-      } catch (ackErr) {
-        logRed(`❌ Error al hacer ack: ${ackErr.message}`);
-      }
-
       const endTime = performance.now();
       logPurple(
         `⏱ Tiempo de ejecución: ${(endTime - startTime).toFixed(2)} ms`
       );
+      channel.ack(msg);
     }
   });
 }
