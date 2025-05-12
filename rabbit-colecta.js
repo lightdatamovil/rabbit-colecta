@@ -40,7 +40,7 @@ async function createConnection() {
     logGreen("✅ Conectado a RabbitMQ");
 
     connection.on("error", (err) => {
-      logRed("💥 Error en conexión:", err.message);
+      logRed(`💥 Error en conexión: ${err.message}`);
     });
 
     connection.on("close", async () => {
@@ -83,31 +83,7 @@ async function closeConnection() {
       connection = null;
     }
   } catch (err) {
-    logRed("🔻 Error inesperado al cerrar conexión vieja:", err.message);
-  }
-}
-
-async function sendToResponseQueue(queueName, payload) {
-  let tempChannel;
-  try {
-    tempChannel = await connection.createChannel();
-    await tempChannel.assertQueue(queueName, responseQueueOptions);
-    await tempChannel.sendToQueue(
-      queueName,
-      Buffer.from(JSON.stringify(payload)),
-      { persistent: true }
-    );
-    logGreen(`📤 Enviado a ${queueName}`);
-  } catch (err) {
-    logRed(`❌ Error enviando mensaje a ${queueName}: ${err.message}`);
-  } finally {
-    if (tempChannel) {
-      try {
-        await tempChannel.close();
-      } catch (err) {
-        logRed(`⚠️ Error al cerrar canal temporal: ${err.message}`);
-      }
-    }
+    logRed(`🔻 Error al cerrar conexión vieja: ${err.message}`);
   }
 }
 
@@ -115,7 +91,6 @@ function startConsuming(channel) {
   channel.consume(QUEUE_NAME_COLECTA, async (msg) => {
     const startTime = performance.now();
     if (!msg) return;
-
     const body = JSON.parse(msg.content.toString());
 
     try {
