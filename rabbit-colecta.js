@@ -20,6 +20,11 @@ let connection;
 let channel;
 let reconnecting = false;
 
+const responseQueueOptions = {
+  durable: false,
+  autoDelete: true,
+};
+
 async function createConnection() {
   if (reconnecting) return;
   reconnecting = true;
@@ -29,7 +34,6 @@ async function createConnection() {
       await redisClient.connect();
     }
 
-    // Cierra las conexiones y canales viejos antes de crear nuevos
     await closeConnection();
 
     connection = await connect(RABBITMQ_URL);
@@ -40,9 +44,11 @@ async function createConnection() {
     });
 
     connection.on("close", async () => {
-      logRed("⚠️ Conexión cerrada. Intentando reconectar...");
-      await closeConnection();
-      setTimeout(() => createConnection(), RECONNECT_INTERVAL);
+      if (!reconnecting) {
+        logRed("⚠️ Conexión cerrada. Intentando reconectar...");
+        await closeConnection();
+        setTimeout(() => createConnection(), RECONNECT_INTERVAL);
+      }
     });
 
     channel = await connection.createChannel();
@@ -61,31 +67,47 @@ async function createConnection() {
 async function closeConnection() {
   try {
     if (channel) {
-      await channel.close();
+      try {
+        await channel.close();
+      } catch (err) {
+        logRed("🔻 Error al cerrar canal:", err.message);
+      }
       channel = null;
     }
     if (connection) {
-      await connection.close();
+      try {
+        await connection.close();
+      } catch (err) {
+        logRed("🔻 Error al cerrar conexión:", err.message);
+      }
       connection = null;
     }
   } catch (err) {
-    logRed("🔻 Error al cerrar conexión vieja:", err.message);
+    logRed("🔻 Error inesperado al cerrar conexión vieja:", err.message);
   }
 }
 
 async function sendToResponseQueue(queueName, payload) {
+  let tempChannel;
   try {
-    const tempChannel = await connection.createChannel();
-    await tempChannel.assertQueue(queueName, { durable: true });
+    tempChannel = await connection.createChannel();
+    await tempChannel.assertQueue(queueName, responseQueueOptions);
     await tempChannel.sendToQueue(
       queueName,
       Buffer.from(JSON.stringify(payload)),
       { persistent: true }
     );
-    // await tempChannel.close();
     logGreen(`📤 Enviado a ${queueName}`);
   } catch (err) {
     logRed(`❌ Error enviando mensaje a ${queueName}: ${err.message}`);
+  } finally {
+    if (tempChannel) {
+      try {
+        await tempChannel.close();
+      } catch (err) {
+        logRed(`⚠️ Error al cerrar canal temporal: ${err.message}`);
+      }
+    }
   }
 }
 
@@ -93,7 +115,7 @@ function startConsuming(channel) {
   channel.consume(QUEUE_NAME_COLECTA, async (msg) => {
     const startTime = performance.now();
     if (!msg) return;
-    // channel.ack(msg);
+
     const body = JSON.parse(msg.content.toString());
 
     try {
@@ -119,10 +141,8 @@ function startConsuming(channel) {
         body
       );
       result.feature = "colecta";
-      await channel.assertQueue(body.channel, {
-        durable: true,
-        autoDelete: true,
-      });
+
+      await channel.assertQueue(body.channel, responseQueueOptions);
       channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(result)), {
         persistent: true,
       });
@@ -135,10 +155,7 @@ function startConsuming(channel) {
         mensaje: error.stack,
         error: true,
       };
-      await channel.assertQueue(body.channel, {
-        durable: true,
-        autoDelete: true,
-      });
+      await channel.assertQueue(body.channel, responseQueueOptions);
       channel.sendToQueue(body.channel, Buffer.from(JSON.stringify(fallback)), {
         persistent: true,
       });
