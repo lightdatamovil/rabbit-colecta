@@ -93,7 +93,7 @@ function startConsuming(channel) {
   channel.consume(QUEUE_NAME_COLECTA, async (msg) => {
     const startTime = performance.now();
     if (!msg) return;
-    channel.ack(msg);
+    // channel.ack(msg);
     const body = JSON.parse(msg.content.toString());
 
     try {
