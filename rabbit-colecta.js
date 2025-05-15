@@ -21,7 +21,7 @@ let channel;
 let reconnecting = false;
 
 const responseQueueOptions = {
-  durable: true,
+  durable: false,
   autoDelete: true,
 };
 
