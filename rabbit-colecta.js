@@ -21,7 +21,7 @@ let channel;
 let reconnecting = false;
 
 const responseQueueOptions = {
-  durable: false,
+  durable: true,
   autoDelete: true,
 };
 
@@ -52,6 +52,8 @@ async function createConnection() {
     });
 
     channel = await connection.createChannel();
+    const channel2 = await connection.createChannel();
+
     await channel.assertQueue(QUEUE_NAME_COLECTA, { durable: true });
 
     logBlue(`🎧 Escuchando mensajes en "${QUEUE_NAME_COLECTA}"`);
@@ -91,6 +93,11 @@ function startConsuming(channel) {
   channel.consume(QUEUE_NAME_COLECTA, async (msg) => {
     const startTime = performance.now();
     if (!msg) return;
+    if (msg.fields.redelivered) {
+      logRed("🔁 Mensaje reentregado, ignorando...");
+      channel.ack(msg);
+      return;
+    }
     const body = JSON.parse(msg.content.toString());
 
     try {
