@@ -95,7 +95,7 @@ function startConsuming(channel) {
 
     try {
       logGreen(`📩 Mensaje recibido: ${JSON.stringify(body, null, 2)}`);
-
+      //   channel.ack(msg);
       const errorMessage = verifyParameters(body, [
         "dataQr",
         "autoAssign",
