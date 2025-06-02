@@ -136,7 +136,9 @@ export async function handleExternalFlex(dbConnection, company, userId, profile,
                 logCyan("Encontre el envio en envios exteriores");
             } else {
                 /// Inserto en envios y en envios exteriores de la logistica interna
-                internalShipmentId = await insertEnvios(dbConnection, company.did, externalLogisticId, 0, dataQr, 1, 1, userId);
+                internalShipmentId = await insertEnvios(dbConnection, company.did, externalLogisticId, 0, dataQr, 1, 1, userId,
+                    latitud,
+                    longitud);
                 logCyan("Inserte el envio en envios");
             }
 
